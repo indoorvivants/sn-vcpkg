@@ -14,9 +14,6 @@ import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
 
 object VcpkgPlugin extends AutoPlugin {
 
-  override def trigger = allRequirements
-  override def requires = JvmPlugin
-
   object autoImport {
     val vcpkgDependencies =
       settingKey[Set[String]]("List of vcpkg dependencies")
