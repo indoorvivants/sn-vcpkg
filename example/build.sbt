@@ -1,6 +1,6 @@
 enablePlugins(VcpkgPlugin, ScalaNativePlugin)
 
-vcpkgDependencies := Set("libuv", "czmq", "libpq")
+vcpkgDependencies := Set("libuv", "czmq", "libpq", "cjson")
 
 nativeConfig := {
   val conf = nativeConfig.value
