@@ -22,10 +22,11 @@ object VcpkgPlugin extends AutoPlugin {
       settingKey[Set[String]]("List of vcpkg dependencies")
     val vcpkgBootstrap =
       settingKey[Boolean]("whether to bootstrap vcpkg automatically")
-    val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
-    val vcpkgInstall = taskKey[Vector[Vcpkg.FilesInfo]]("")
-    val vcpkgLinkingArguments = taskKey[Vector[String]]("")
-    val vcpkgCompilationArguments = taskKey[Vector[String]]("")
+    val vcpkgBinary = settingKey[File]("Path to vcpkg binary")
+    val vcpkgInstall = settingKey[Vector[Vcpkg.FilesInfo]]("")
+    val vcpkgLinkingArguments = settingKey[Vector[String]]("")
+    val vcpkgCompilationArguments = settingKey[Vector[String]]("")
+    val vcpkgManager = settingKey[Vcpkg]("")
   }
 
   import autoImport._
@@ -33,8 +34,13 @@ object VcpkgPlugin extends AutoPlugin {
   override lazy val projectSettings = Seq(
     vcpkgBootstrap := true,
     vcpkgDependencies := Set.empty,
+    vcpkgManager := {
+      val binary = vcpkgBinary.value
+      val installation = target.value / "vcpkg-install"
+      VcpkgBootstrap.manager(binary, installation)
+    },
     vcpkgBinary := {
-      val log = streams.value.log
+      val log = sLog.value
       val destination = target.value / "vcpkg"
 
       val binary = destination / "vcpkg"
@@ -57,11 +63,12 @@ object VcpkgPlugin extends AutoPlugin {
     },
     vcpkgInstall := {
       val deps = vcpkgDependencies.value.map(Vcpkg.Dependency.parse)
-      val binary = vcpkgBinary.value
-      val installation = target.value / "vcpkg-install"
-      val manager = VcpkgBootstrap.manager(binary, installation)
+      // val binary = vcpkgBinary.value
+      // val installation = target.value / "vcpkg-install"
+      // val manager = VcpkgBootstrap.manager(binary, installation)
+      val manager = vcpkgManager.value
 
-      val log = streams.value.log
+      val log = sLog.value
 
       val allActualDependencies = deps
         .flatMap { name =>
@@ -80,7 +87,7 @@ object VcpkgPlugin extends AutoPlugin {
       }.toVector
     },
     vcpkgLinkingArguments := {
-      val log = streams.value.log
+      val log = sLog.value
       val info = vcpkgInstall.value
       val arguments = Vector.newBuilder[String]
 

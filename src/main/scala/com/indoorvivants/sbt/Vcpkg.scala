@@ -47,6 +47,12 @@ class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
       libDir = location / "lib"
     )
   }
+
+  def includes(library: String) = {
+    files(library).includeDir 
+  }
+
+
 }
 
 object Vcpkg {
@@ -151,3 +157,4 @@ object Vcpkg {
   }
 
 }
+
