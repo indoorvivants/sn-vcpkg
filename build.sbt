@@ -19,17 +19,16 @@ inThisBuild(
 lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
 lazy val supportedScalaVersions = List(scala213, scala212)
-ThisBuild / crossScalaVersions := supportedScalaVersions
 
-lazy val root = (project in file("."))
-  .aggregate(core, `sbt-plugin`)
+lazy val root = project
+  .in(file("."))
+  .aggregate((core.projectRefs ++ `sbt-plugin`.projectRefs) *)
   .settings(
-    // crossScalaVersions must be set to Nil on the aggregating project
-    crossScalaVersions := Nil,
     publish / skip := true
   )
 
-lazy val core = project
+lazy val core = projectMatrix
+  .jvmPlatform(scalaVersions = supportedScalaVersions)
   .in(file("core"))
   .settings(
     name := "vcpkg-core",
@@ -37,7 +36,8 @@ lazy val core = project
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
   )
 
-lazy val `sbt-plugin` = project
+lazy val `sbt-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(scala212))
   .in(file("sbt-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin)
@@ -48,38 +48,7 @@ lazy val `sbt-plugin` = project
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
-    ),
-    crossScalaVersions := Seq(scala212)
-  )
-
-console / initialCommands := """import com.indoorvivants.sbt._"""
-
-ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
-ThisBuild / githubWorkflowPublishTargetBranches :=
-  Seq(RefPredicate.StartsWith(Ref.Tag("v")))
-
-ThisBuild / githubWorkflowJavaVersions := Seq(
-  sbtghactions.JavaSpec.temurin("11")
-)
-
-ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(List("core/test")),
-  WorkflowStep.Sbt(
-    List("scripted"),
-    cond = Some("startsWith(matrix.scala, '2.12')")
-  )
-)
-
-ThisBuild / githubWorkflowPublish := Seq(
-  WorkflowStep.Sbt(
-    List("ci-release"),
-    env = Map(
-      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
-      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
-      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
-      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}"
     )
   )
-)
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
