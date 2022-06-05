@@ -63,7 +63,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 
 ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(List("test")),
+  WorkflowStep.Sbt(List("core/test")),
   WorkflowStep.Sbt(
     List("scripted"),
     cond = Some("startsWith(matrix.scala, '2.12')")
