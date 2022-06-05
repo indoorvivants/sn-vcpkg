@@ -45,6 +45,8 @@ ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("test", "scripted"))
 )
 
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-latest", "macos-11", "windows-2022")
+
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
     List("ci-release"),
