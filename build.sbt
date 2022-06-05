@@ -34,7 +34,8 @@ lazy val core = projectMatrix
   .settings(
     name := "vcpkg-core",
     crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
+    scalacOptions += "-Xsource:3"
   )
 
 lazy val `sbt-plugin` = projectMatrix
@@ -49,7 +50,8 @@ lazy val `sbt-plugin` = projectMatrix
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
-    )
+    ),
+    scriptedBufferLog := false,
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges

@@ -1,2 +1,3 @@
-> show vcpkgLinkingArguments
-> show vcpkgCompilationArguments
+> vcpkgBinary
+> vcpkgLinkingArguments
+> vcpkgCompilationArguments

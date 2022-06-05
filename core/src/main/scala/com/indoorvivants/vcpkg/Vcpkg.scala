@@ -7,10 +7,20 @@ import java.nio.file.Files
 import java.util.stream.Collectors
 import Platform.OS._
 
-class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
-  import sys.process._
+class Vcpkg(
+    binary: File,
+    installation: File,
+    debug: String => Unit = _ => (),
+    error: String => Unit = System.err.println
+) {
+  import sys.process.*
   private val localArg = s"--x-install-root=$installation"
   private val root = binary.getParentFile()
+
+  private def commandFailed(args: Seq[String], code: Int) = {
+    val command = args.mkString("`", " ", "`")
+    throw new Exception(s"Command $command failed with exit code $code")
+  }
 
   private def cmd(args: String*) =
     Seq(binary.toString) ++ args ++ Seq(localArg)
@@ -19,11 +29,14 @@ class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
     import sys.process.Process
     val logs = Vcpkg.logCollector
     val p = Process.apply(args).run(logs.logger).exitValue()
-    assert(p == 0)
 
-    logs.dump(debug)
-
-    logs.stdout()
+    if (p != 0) {
+      logs.dump(error)
+      commandFailed(args, p)
+    } else {
+      logs.dump(debug)
+      logs.stdout()
+    }
   }
 
   def dependencyInfo(name: String) =
@@ -44,9 +57,8 @@ class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
   }
 
   def includes(library: String) = {
-    files(library).includeDir 
+    files(library).includeDir
   }
-
 
 }
 
@@ -111,8 +123,13 @@ object Vcpkg {
         .map(_.toFile)
         .toVector
 
-    def staticLibraries =
-      walk(libDir.toPath, _.getFileName.toString.endsWith(".a"))
+    def staticLibraries = {
+      val extension = Platform.os match {
+        case Windows => ".lib"
+        case _       => ".a"
+      }
+      walk(libDir.toPath, _.getFileName.toString.endsWith(extension))
+    }
 
     def dynamicLibraries = {
       val extension = Platform.os match {
@@ -152,4 +169,3 @@ object Vcpkg {
   }
 
 }
-

@@ -33,25 +33,28 @@ object VcpkgPlugin extends AutoPlugin {
     vcpkgManager := {
       val binary = vcpkgBinary.value
       val installation = target.value / "vcpkg-install"
-      VcpkgBootstrap.manager(binary, installation)
+      val logger = sLog.value
+      val errorLogger = (s: String) => logger.error(s)
+      VcpkgBootstrap.manager(binary, installation, errorLogger)
     },
     vcpkgBinary := {
       val log = sLog.value
       val destination = target.value / "vcpkg"
 
-      val binary = destination / "vcpkg"
-      val bootstrapScript = destination / "bootstrap-vcpkg.sh"
+      val binary = destination / VcpkgBootstrap.BINARY_NAME
+      val bootstrapScript = destination / VcpkgBootstrap.BOOTSTRAP_SCRIPT
+      val errorLogger = (s: String) => log.error(s)
 
       if (binary.exists()) binary
       else if (bootstrapScript.exists) {
         log.info("Bootstrapping vcpkg...")
-        VcpkgBootstrap.launchBootstrap(destination)
+        VcpkgBootstrap.launchBootstrap(destination, errorLogger)
 
         binary
       } else {
         log.info("Cloning and doing the whole shebang")
         VcpkgBootstrap.clone(destination)
-        VcpkgBootstrap.launchBootstrap(destination)
+        VcpkgBootstrap.launchBootstrap(destination, errorLogger)
 
         binary
       }
@@ -59,9 +62,6 @@ object VcpkgPlugin extends AutoPlugin {
     },
     vcpkgInstall := {
       val deps = vcpkgDependencies.value.map(Vcpkg.Dependency.parse)
-      // val binary = vcpkgBinary.value
-      // val installation = target.value / "vcpkg-install"
-      // val manager = VcpkgBootstrap.manager(binary, installation)
       val manager = vcpkgManager.value
 
       val log = sLog.value
