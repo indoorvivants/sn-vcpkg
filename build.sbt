@@ -45,7 +45,11 @@ lazy val `sbt-plugin` = project
     name := """sbt-vcpkg""",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
-    scriptedLaunchOpts ++= Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    scriptedLaunchOpts ++= Seq(
+      "-Xmx1024M",
+      "-Dplugin.version=" + version.value
+    ),
+    crossScalaVersions := Seq(scala212)
   )
 
 console / initialCommands := """import com.indoorvivants.sbt._"""
@@ -59,7 +63,11 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 
 ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(List("test", "scripted"))
+  WorkflowStep.Sbt(List("test")),
+  WorkflowStep.Sbt(
+    List("scripted"),
+    cond = Some("startsWith(matrix.scala, '2.12')")
+  )
 )
 
 ThisBuild / githubWorkflowPublish := Seq(
