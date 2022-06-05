@@ -17,6 +17,11 @@ class Vcpkg(
   private val localArg = s"--x-install-root=$installation"
   private val root = binary.getParentFile()
 
+  private def commandFailed(args: Seq[String], code: Int) = {
+    val command = args.mkString("`", " ", "`")
+    throw new Exception(s"Command $command failed with exit code $code")
+  }
+
   private def cmd(args: String*) =
     Seq(binary.toString) ++ args ++ Seq(localArg)
 
@@ -24,11 +29,14 @@ class Vcpkg(
     import sys.process.Process
     val logs = Vcpkg.logCollector
     val p = Process.apply(args).run(logs.logger).exitValue()
-    assert(p == 0)
 
-    logs.dump(debug)
-
-    logs.stdout()
+    if (p != 0) {
+      logs.dump(error)
+      commandFailed(args, p)
+    } else {
+      logs.dump(debug)
+      logs.stdout()
+    }
   }
 
   def dependencyInfo(name: String) =
