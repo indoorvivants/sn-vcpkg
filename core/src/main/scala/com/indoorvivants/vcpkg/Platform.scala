@@ -21,18 +21,18 @@ private[vcpkg] object Platform {
           case _          => "x64"
         }
     }
-    case object aarch64 extends Arch {
-      override def string = "aarch64"
+    case object arm64 extends Arch {
+      override def string = "arm64"
     }
 
-    val all = List(x86_64, aarch64)
+    val all = List(x86_64, arm64)
   }
 
   case class Target(os: OS, arch: Arch) {
     def string = arch.string + "-" + os.string
     def fallback = (os, arch) match {
-      case (OS.MacOS, Arch.aarch64) => Some(Target(os, Arch.x86_64))
-      case _                        => None
+      case (OS.MacOS, Arch.arm64) => Some(Target(os, Arch.x86_64))
+      case _                      => None
     }
   }
 
@@ -44,8 +44,8 @@ private[vcpkg] object Platform {
   }
 
   def detectArch(osArchProp: String): Arch = normalise(osArchProp) match {
-    case "amd65" | "x64" | "x8664" | "x86" => Arch.x86_64
-    case "aarch64"                         => Arch.aarch64
+    case "amd64" | "x64" | "x8664" | "x86" => Arch.x86_64
+    case "aarch64" | "arm64"               => Arch.arm64
   }
 
   lazy val os = detectOs(sys.props.getOrElse("os.name", ""))
