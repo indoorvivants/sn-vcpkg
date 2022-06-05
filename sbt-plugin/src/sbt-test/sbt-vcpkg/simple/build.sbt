@@ -3,4 +3,4 @@ scalaVersion := "2.12.15"
 
 enablePlugins(VcpkgPlugin)
 
-vcpkgDependencies := Set("czmq", "cjson")
+vcpkgDependencies := Set("libuv", "cjson")
