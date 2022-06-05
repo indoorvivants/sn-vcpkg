@@ -5,7 +5,7 @@
 .bsp
 .metals
 .vscode 
-project/metals.sbt
+metals.sbt
 
 target
 project/project
