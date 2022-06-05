@@ -51,7 +51,16 @@ lazy val `sbt-plugin` = projectMatrix
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
     ),
-    scriptedBufferLog := false,
+    scriptedBufferLog := false
+  )
+
+lazy val `mill-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(scala213))
+  .in(file("mill-plugin"))
+  .dependsOn(core)
+  .settings(
+    name := """mill-vcpkg""",
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4"
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
