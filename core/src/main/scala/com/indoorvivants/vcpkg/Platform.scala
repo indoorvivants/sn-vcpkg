@@ -1,4 +1,4 @@
-package com.indoorvivants.vcpkg.sbt
+package com.indoorvivants.vcpkg
 
 private[vcpkg] object Platform {
   sealed abstract class OS(val string: String) extends Product with Serializable

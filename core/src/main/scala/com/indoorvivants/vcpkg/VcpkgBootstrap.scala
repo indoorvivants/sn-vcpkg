@@ -1,16 +1,11 @@
-package com.indoorvivants.vcpkg.sbt
+package com.indoorvivants.vcpkg
 
-import sbt._
-import sbt.Keys._
-import sbt.plugins.JvmPlugin
 import java.util.Arrays
 import scala.sys.process
+import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Linux
-import com.indoorvivants.vcpkg.sbt.Platform.OS.MacOS
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Unknown
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
+import Platform.OS._
 
 object VcpkgBootstrap {
   private val REMOTE_URI = "https://github.com/microsoft/vcpkg"
@@ -47,7 +42,7 @@ object VcpkgBootstrap {
       script.exists(),
       s"vcpkg bootstrap script ($script) doesn't exist, did you forget to clone it?"
     )
-    import sys.process.*
+    import sys.process._
 
     val collector = Vcpkg.logCollector
 

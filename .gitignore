@@ -1,6 +1,12 @@
 *.class
 *.log
 
+.bloop
+.bsp
+.metals
+.vscode 
+metals.sbt
+
 target
 project/project
 project/target

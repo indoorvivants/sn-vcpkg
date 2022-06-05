@@ -1,16 +1,11 @@
-package com.indoorvivants.vcpkg.sbt
+package com.indoorvivants.vcpkg
 
-import sbt._
-import sbt.Keys._
-import sbt.plugins.JvmPlugin
 import java.util.Arrays
 import scala.sys.process
+import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Linux
-import com.indoorvivants.vcpkg.sbt.Platform.OS.MacOS
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Unknown
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
+import Platform.OS._
 
 class Vcpkg(
     binary: File,
@@ -106,7 +101,7 @@ object Vcpkg {
   }
 
   case class FilesInfo(includeDir: File, libDir: File) {
-    import collection.JavaConverters.*
+    import collection.JavaConverters._
     private def walk(
         path: java.nio.file.Path,
         predicate: java.nio.file.Path => Boolean
