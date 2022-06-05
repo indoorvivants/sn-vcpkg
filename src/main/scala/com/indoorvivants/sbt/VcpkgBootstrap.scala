@@ -13,10 +13,22 @@ import com.indoorvivants.vcpkg.sbt.Platform.OS.Unknown
 import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
 
 object VcpkgBootstrap {
+  private val REMOTE_URI = "https://github.com/microsoft/vcpkg"
+
+  lazy val BOOTSTRAP_SCRIPT =
+    Platform.os match {
+      case Windows => "bootstrap-vcpkg.bat"
+      case _       => "bootstrap-vcpkg.sh"
+    }
+
+  lazy val BINARY_NAME =
+    Platform.os match {
+      case Windows => "vcpkg.exe"
+      case _       => "vcpkg"
+    }
+
   def clone(directory: File) = {
     import org.eclipse.jgit.api.Git
-
-    val REMOTE_URI = "https://github.com/microsoft/vcpkg"
 
     val repo = Git
       .cloneRepository()
@@ -29,23 +41,29 @@ object VcpkgBootstrap {
 
   }
 
-  def launchBootstrap(directory: File) = {
-    val script = directory / "bootstrap-vcpkg.sh"
+  def launchBootstrap(directory: File, errorLogger: String => Unit) = {
+    val script = directory / BOOTSTRAP_SCRIPT
     assert(
       script.exists(),
       s"vcpkg bootstrap script ($script) doesn't exist, did you forget to clone it?"
     )
     import sys.process.*
 
-    val logger = Vcpkg.logCollector.logger
+    val collector = Vcpkg.logCollector
 
     val cmd = Seq(script.toString)
 
-    assert(Process(cmd).run(logger).exitValue == 0)
+    val result = Process(cmd).run(collector.logger).exitValue
+
+    if (result != 0) collector.dump(errorLogger)
 
   }
 
-  def manager(binary: File, installationDir: File) = {
+  def manager(
+      binary: File,
+      installationDir: File,
+      errorLogger: String => Unit
+  ) = {
     assert(
       binary.exists(),
       s"vcpkg executable ($binary) doesn't exist, did you forget to bootstrap it"

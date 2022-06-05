@@ -12,7 +12,12 @@ import com.indoorvivants.vcpkg.sbt.Platform.OS.MacOS
 import com.indoorvivants.vcpkg.sbt.Platform.OS.Unknown
 import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
 
-class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
+class Vcpkg(
+    binary: File,
+    installation: File,
+    debug: String => Unit = _ => (),
+    error: String => Unit = System.err.println
+) {
   import sys.process.*
   private val localArg = s"--x-install-root=$installation"
   private val root = binary.getParentFile()
@@ -49,9 +54,8 @@ class Vcpkg(binary: File, installation: File, debug: String => Unit = _ => ()) {
   }
 
   def includes(library: String) = {
-    files(library).includeDir 
+    files(library).includeDir
   }
-
 
 }
 
@@ -116,8 +120,13 @@ object Vcpkg {
         .map(_.toFile)
         .toVector
 
-    def staticLibraries =
-      walk(libDir.toPath, _.getFileName.toString.endsWith(".a"))
+    def staticLibraries = {
+      val extension = Platform.os match {
+        case Windows => ".lib"
+        case _       => ".a"
+      }
+      walk(libDir.toPath, _.getFileName.toString.endsWith(extension))
+    }
 
     def dynamicLibraries = {
       val extension = Platform.os match {
@@ -157,4 +166,3 @@ object Vcpkg {
   }
 
 }
-
