@@ -7,10 +7,9 @@ import java.util.Arrays
 import scala.sys.process
 import java.nio.file.Files
 import java.util.stream.Collectors
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Linux
-import com.indoorvivants.vcpkg.sbt.Platform.OS.MacOS
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Unknown
-import com.indoorvivants.vcpkg.sbt.Platform.OS.Windows
+import com.indoorvivants.vcpkg.Vcpkg
+import com.indoorvivants.vcpkg.VcpkgBootstrap
+import com.indoorvivants.vcpkg.Platform.OS._
 
 object VcpkgPlugin extends AutoPlugin {
 

@@ -1,11 +1,6 @@
 // DO NOT EDIT! This file is auto-generated.
 
-// This plugin enables semantic information to be produced by sbt.
-// It also adds support for debugging using the Debug Adapter Protocol
-resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-addSbtPlugin("org.scalameta" % "sbt-metals" % "0.11.5+157-d0cf15ce-SNAPSHOT")
+// This file enables sbt-bloop to create bloop config files.
 
-// This plugin adds the BSP debug capability to sbt server.
-
-addSbtPlugin("ch.epfl.scala" % "sbt-debug-adapter" % "2.2.0-M1")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.0-18-003e6c7b")
 
