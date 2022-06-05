@@ -32,9 +32,14 @@ libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.20220308
 
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches :=
-  Seq(RefPredicate.StartsWith(Ref.Tag("v")))
+  Seq(
+    RefPredicate.StartsWith(Ref.Tag("v")),
+    RefPredicate.Equals(Ref.Branch("main"))
+  )
 
-ThisBuild / githubWorkflowJavaVersions := Seq(sbtghactions.JavaSpec.temurin("11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(
+  sbtghactions.JavaSpec.temurin("11")
+)
 
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("test", "scripted"))
