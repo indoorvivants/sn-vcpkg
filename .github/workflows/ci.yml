@@ -8,12 +8,12 @@ on:
 
 jobs:
   build:
-    name: CI ${{ matrix.java }}
+    name: CI ${{ matrix.os }} (java ${{ matrix.java }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [11]
+        java: [11, 17]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
