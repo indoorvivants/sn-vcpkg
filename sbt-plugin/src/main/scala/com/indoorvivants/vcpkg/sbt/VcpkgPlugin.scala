@@ -10,8 +10,9 @@ import java.util.stream.Collectors
 import com.indoorvivants.vcpkg.Vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import com.indoorvivants.vcpkg.Platform.OS._
+import com.indoorvivants.vcpkg
 
-object VcpkgPlugin extends AutoPlugin {
+object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
 
   object autoImport {
     val vcpkgDependencies =
@@ -38,87 +39,29 @@ object VcpkgPlugin extends AutoPlugin {
       VcpkgBootstrap.manager(binary, installation, errorLogger)
     },
     vcpkgBinary := {
-      val log = sLog.value
-      val destination = target.value / "vcpkg"
-
-      val binary = destination / VcpkgBootstrap.BINARY_NAME
-      val bootstrapScript = destination / VcpkgBootstrap.BOOTSTRAP_SCRIPT
-      val errorLogger = (s: String) => log.error(s)
-
-      if (binary.exists()) binary
-      else if (bootstrapScript.exists) {
-        log.info("Bootstrapping vcpkg...")
-        VcpkgBootstrap.launchBootstrap(destination, errorLogger)
-
-        binary
-      } else {
-        log.info("Cloning and doing the whole shebang")
-        VcpkgBootstrap.clone(destination)
-        VcpkgBootstrap.launchBootstrap(destination, errorLogger)
-
-        binary
-      }
-
+      vcpkgBinaryImpl(
+        targetFolder = target.value,
+        logInfo = sLog.value.info(_),
+        logError = sLog.value.error(_)
+      )
     },
     vcpkgInstall := {
-      val deps = vcpkgDependencies.value.map(Vcpkg.Dependency.parse)
-      val manager = vcpkgManager.value
-
-      val log = sLog.value
-
-      val allActualDependencies = deps
-        .flatMap { name =>
-          val info = manager.dependencyInfo(name.name)
-          val transitive = info.allTransitive(name)
-
-          name +: transitive
-        }
-        .filterNot(_.name.startsWith("vcpkg-"))
-
-      allActualDependencies.map { dep =>
-        log.info(s"Installing ${dep.name}")
-        manager.install(dep.name)
-
-        manager.files(dep.name)
-      }.toVector
+      vcpkgInstallImpl(
+        dependencies = vcpkgDependencies.value,
+        manager = vcpkgManager.value,
+        logInfo = sLog.value.info(_)
+      ).toVector
     },
     vcpkgLinkingArguments := {
-      val log = sLog.value
-      val info = vcpkgInstall.value
-      val arguments = Vector.newBuilder[String]
-
-      info.foreach { case f @ Vcpkg.FilesInfo(_, libDir) =>
-        val static = f.staticLibraries
-        val dynamic = f.dynamicLibraries
-
-        if (dynamic.nonEmpty) {
-          arguments += s"-L$libDir"
-          dynamic.foreach { filePath =>
-            val fileName = filePath.base
-
-            if (fileName.startsWith("lib"))
-              arguments += "-l" + fileName.drop(3)
-            else
-              log.warn(
-                s"Malformed dynamic library filename $fileName in $filePath"
-              )
-          }
-        }
-
-        static.foreach(f => arguments += f.toString)
-      }
-
-      arguments.result()
+      vcpkgLinkingArgumentsImpl(
+        info = vcpkgInstall.value,
+        logWarn = sLog.value.error(_)
+      )
     },
     vcpkgCompilationArguments := {
-      val info = vcpkgInstall.value
-      val arguments = Vector.newBuilder[String]
-
-      info.foreach { case f @ Vcpkg.FilesInfo(includeDir, _) =>
-        arguments += s"-I$includeDir"
-      }
-
-      arguments.result()
+      vcpkgCompilationArgumentsImpl(
+        info = vcpkgInstall.value
+      )
     }
   )
 

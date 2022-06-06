@@ -11,8 +11,9 @@ import com.indoorvivants.vcpkg.Platform.OS._
 import mill.define.Worker
 import mill.define.ExternalModule
 import mill.define.Discover
+import com.indoorvivants.vcpkg.VcpkgPluginImpl
 
-trait VcpkgModule extends mill.define.Module {
+trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
   /** List of vcpkg dependencies
     */
@@ -29,91 +30,39 @@ trait VcpkgModule extends mill.define.Module {
     VcpkgBootstrap.manager(binary, installation.toIO, errorLogger)
   }
 
-  def vcpkgInstall: T[List[Vcpkg.FilesInfo]] = T {
-    val deps = vcpkgDependencies().map(Vcpkg.Dependency.parse)
-    val manager = vcpkgManager()
-
-    val allActualDependencies = deps
-      .flatMap { name =>
-        val info = manager.dependencyInfo(name.name)
-        val transitive = info.allTransitive(name)
-
-        name +: transitive
-      }
-      .filterNot(_.name.startsWith("vcpkg-"))
-
-    allActualDependencies.map { dep =>
-      T.log.info(s"Installing ${dep.name}")
-      manager.install(dep.name)
-
-      manager.files(dep.name)
-    }.toList
+  def vcpkgInstall: T[Vector[Vcpkg.FilesInfo]] = T {
+    vcpkgInstallImpl(
+      dependencies = vcpkgDependencies(),
+      manager = vcpkgManager(),
+      logInfo = T.log.info(_: String)
+    )
   }
 
   def vcpkgLinkingArguments: T[Vector[String]] = T {
-    val info = vcpkgInstall()
-    val arguments = Vector.newBuilder[String]
-
-    info.foreach { case f @ Vcpkg.FilesInfo(_, libDir) =>
-      val static = f.staticLibraries
-      val dynamic = f.dynamicLibraries
-
-      if (dynamic.nonEmpty) {
-        arguments += s"-L$libDir"
-        dynamic.foreach { filePath =>
-          val fileName = os.Path(filePath).baseName
-
-          if (fileName.startsWith("lib"))
-            arguments += "-l" + fileName.drop(3)
-          else
-            T.log.error(
-              s"Malformed dynamic library filename $fileName in $filePath"
-            )
-        }
-      }
-
-      static.foreach(f => arguments += f.toString)
-    }
-
-    arguments.result()
+    vcpkgLinkingArgumentsImpl(
+      info = vcpkgInstall(),
+      logWarn = T.log.error(_)
+    )
   }
 
   def vcpkgCompilationArguments: T[Vector[String]] = T {
-    val info = vcpkgInstall()
-    val arguments = Vector.newBuilder[String]
-
-    info.foreach { case f @ Vcpkg.FilesInfo(includeDir, _) =>
-      arguments += s"-I$includeDir"
-    }
-
-    arguments.result()
+    vcpkgCompilationArgumentsImpl(
+      info = vcpkgInstall()
+    )
   }
 }
 
-object VcpkgModule extends ExternalModule {
+object VcpkgModule extends ExternalModule with VcpkgPluginImpl {
 
   /** "Path to vcpkg binary"
     */
   def vcpkgBinary: T[os.Path] = T {
-    val destination = T.dest / "vcpkg"
-
-    val binary = destination / VcpkgBootstrap.BINARY_NAME
-    val bootstrapScript = destination / VcpkgBootstrap.BOOTSTRAP_SCRIPT
-    val errorLogger = (s: String) => T.log.error(s)
-
-    if (os.exists(binary)) binary
-    else if (os.exists(bootstrapScript)) {
-      T.log.info("Bootstrapping vcpkg...")
-      VcpkgBootstrap.launchBootstrap(destination.toIO, errorLogger)
-
-      binary
-    } else {
-      T.log.info("Cloning and doing the whole shebang")
-      VcpkgBootstrap.clone(destination.toIO)
-      VcpkgBootstrap.launchBootstrap(destination.toIO, errorLogger)
-
-      binary
-    }
+    val ioFile = vcpkgBinaryImpl(
+      targetFolder = T.dest.toIO,
+      logInfo = T.log.info(_),
+      logError = T.log.error(_)
+    )
+    os.Path(ioFile)
   }
 
   def millDiscover: Discover[this.type] = mill.define.Discover[this.type]
