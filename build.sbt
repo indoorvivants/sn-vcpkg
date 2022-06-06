@@ -1,6 +1,6 @@
 inThisBuild(
   List(
-    organization := "com.indoorvivants", // TODO : org should probably be com.indoorvivants.vcpkg
+    organization := "com.indoorvivants.vcpkg",
     homepage := Some(url("https://github.com/indoorvivants/sbt-vcpkg")),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
@@ -12,7 +12,8 @@ inThisBuild(
         "contact@indoorvivants.com",
         url("https://blog.indoorvivants.com")
       )
-    )
+    ),
+    version := (if (!sys.env.contains("CI")) "dev" else version.value)
   )
 )
 
@@ -23,7 +24,9 @@ lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
 lazy val root = project
   .in(file("."))
-  .aggregate((core.projectRefs ++ `sbt-plugin`.projectRefs) *)
+  .aggregate(
+    (core.projectRefs ++ `sbt-plugin`.projectRefs ++ `mill-plugin`.projectRefs) *
+  )
   .settings(
     publish / skip := true
   )
@@ -51,7 +54,18 @@ lazy val `sbt-plugin` = projectMatrix
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
     ),
-    scriptedBufferLog := false,
+    scriptedBufferLog := false
+  )
+
+lazy val `mill-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(scala213))
+  .in(file("mill-plugin"))
+  .dependsOn(core)
+  .settings(
+    name := """mill-vcpkg""",
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
+    libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.11" % Test,
+    testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
