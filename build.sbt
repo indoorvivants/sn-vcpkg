@@ -1,6 +1,6 @@
 inThisBuild(
   List(
-    organization := "com.indoorvivants", // TODO : org should probably be com.indoorvivants.vcpkg
+    organization := "com.indoorvivants.vcpkg", 
     homepage := Some(url("https://github.com/indoorvivants/sbt-vcpkg")),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
@@ -45,7 +45,7 @@ lazy val `sbt-plugin` = projectMatrix
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    name := """sbt-vcpkg""",
+    name := """vcpkg-sbt""",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
@@ -60,7 +60,7 @@ lazy val `mill-plugin` = projectMatrix
   .in(file("mill-plugin"))
   .dependsOn(core)
   .settings(
-    name := """mill-vcpkg""",
+    name := """vcpkg-mill""",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4"
   )
 
