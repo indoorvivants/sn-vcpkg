@@ -9,7 +9,7 @@ import java.io.File
   */
 trait VcpkgPluginImpl {
 
-  def vcpkgInstallImpl(
+  protected def vcpkgInstallImpl(
       dependencies: Set[String],
       manager: Vcpkg,
       logInfo: String => Unit
@@ -32,7 +32,7 @@ trait VcpkgPluginImpl {
     }.toVector
   }
 
-  def vcpkgLinkingArgumentsImpl(
+  protected def vcpkgLinkingArgumentsImpl(
       info: Vector[Vcpkg.FilesInfo],
       logWarn: String => Unit
   ): Vector[String] = {
@@ -61,7 +61,7 @@ trait VcpkgPluginImpl {
     arguments.result()
   }
 
-  def vcpkgBinaryImpl(
+  protected def vcpkgBinaryImpl(
       targetFolder: File,
       logInfo: String => Unit,
       logError: String => Unit
@@ -86,7 +86,7 @@ trait VcpkgPluginImpl {
     }
   }
 
-  def vcpkgCompilationArgumentsImpl(
+  protected def vcpkgCompilationArgumentsImpl(
       info: Vector[Vcpkg.FilesInfo]
   ): Vector[String] = {
     val arguments = Vector.newBuilder[String]
