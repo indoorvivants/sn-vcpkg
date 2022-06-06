@@ -47,7 +47,7 @@ lazy val `sbt-plugin` = projectMatrix
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    name := """vcpkg-sbt""",
+    name := """sbt-vcpkg""",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
@@ -62,7 +62,7 @@ lazy val `mill-plugin` = projectMatrix
   .in(file("mill-plugin"))
   .dependsOn(core)
   .settings(
-    name := """vcpkg-mill""",
+    name := """mill-vcpkg""",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
     libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.11" % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")
