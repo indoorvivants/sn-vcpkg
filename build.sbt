@@ -24,7 +24,7 @@ lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
 lazy val root = project
   .in(file("."))
-  .aggregate((core.projectRefs ++ `sbt-plugin`.projectRefs) *)
+  .aggregate((core.projectRefs ++ `sbt-plugin`.projectRefs ++ `mill-plugin`.projectRefs) *)
   .settings(
     publish / skip := true
   )
