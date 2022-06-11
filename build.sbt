@@ -1,6 +1,7 @@
 inThisBuild(
   List(
     organization := "com.indoorvivants.vcpkg",
+    sonatypeProfileName := "com.indoorvivants",
     homepage := Some(url("https://github.com/indoorvivants/sbt-vcpkg")),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
