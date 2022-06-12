@@ -24,6 +24,11 @@ lazy val scala212 = "2.12.15"
 lazy val scala3 = "3.1.2"
 lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
+lazy val publishing = Seq(
+  organization := "com.indoorvivants.vcpkg",
+  sonatypeProfileName := "com.indoorvivants"
+)
+
 lazy val root = project
   .in(file("."))
   .aggregate(
@@ -36,6 +41,7 @@ lazy val root = project
 lazy val core = projectMatrix
   .jvmPlatform(scalaVersions = supportedScalaVersions)
   .in(file("core"))
+  .settings(publishing)
   .settings(
     name := "vcpkg-core",
     crossScalaVersions := supportedScalaVersions,
@@ -48,6 +54,7 @@ lazy val `sbt-plugin` = projectMatrix
   .in(file("sbt-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin)
+  .settings(publishing)
   .settings(
     name := """sbt-vcpkg""",
     sbtPlugin := true,
@@ -63,6 +70,7 @@ lazy val `mill-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(scala213))
   .in(file("mill-plugin"))
   .dependsOn(core)
+  .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
