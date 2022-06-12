@@ -1,7 +1,5 @@
 inThisBuild(
   List(
-    organization := "com.indoorvivants.vcpkg",
-    sonatypeProfileName := "com.indoorvivants",
     homepage := Some(url("https://github.com/indoorvivants/sbt-vcpkg")),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
@@ -18,6 +16,9 @@ inThisBuild(
     crossScalaVersions := Nil
   )
 )
+
+organization := "com.indoorvivants.vcpkg"
+sonatypeProfileName := "com.indoorvivants"
 
 lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
