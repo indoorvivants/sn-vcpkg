@@ -83,7 +83,7 @@ class Vcpkg(
     Vcpkg.Dependencies.parse(getLines(cmd("depend-info", name)))
 
   def install(name: String) =
-    getLines(cmd("install", name))
+    getLines(cmd("install", name, s"--triplet=$vcpkgTriplet"))
 
   def files(name: String) = {
     val triplet = vcpkgTriplet
