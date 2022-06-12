@@ -27,18 +27,18 @@ class Vcpkg(
   private val vcpkgTriplet = {
     import Platform.Arch.*
     import Platform.OS.*
-    import Platform.Bits.*
+    import Platform.Bits
 
     val archPrefix = Platform.arch match {
       case Intel =>
         Platform.bits match {
-          case x32 => "x86"
-          case x64 => "x64"
+          case Bits.x32 => "x86"
+          case Bits.x64 => "x64"
         }
       case Arm =>
         Platform.bits match {
-          // case x32 => "arm32"
-          case x64 => "arm64"
+          case Bits.x32 => "arm32"
+          case Bits.x64 => "arm64"
         }
     }
 
