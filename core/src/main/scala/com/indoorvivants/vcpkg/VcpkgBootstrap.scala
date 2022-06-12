@@ -64,6 +64,12 @@ object VcpkgBootstrap {
       s"vcpkg executable ($binary) doesn't exist, did you forget to bootstrap it"
     )
 
-    new Vcpkg(binary, installationDir)
+    val config = Vcpkg.Configuration(
+      binary = binary,
+      installationDir = installationDir,
+      linking = Vcpkg.Linking.Static
+    )
+
+    new Vcpkg(config, error = errorLogger)
   }
 }

@@ -9,48 +9,43 @@ private[vcpkg] object Platform {
     case object Unknown extends OS("unknown")
 
     val all = List(Windows, MacOS, Linux, Unknown)
+    def detect(osNameProp: String): OS = normalise(osNameProp) match {
+      case p if p.startsWith("linux")                         => OS.Linux
+      case p if p.startsWith("windows")                       => OS.Windows
+      case p if p.startsWith("osx") || p.startsWith("macosx") => OS.MacOS
+      case _                                                  => OS.Unknown
+    }
   }
-  sealed abstract class Arch extends Product with Serializable {
-    def string: String
-  }
+  sealed abstract class Arch extends Product with Serializable {}
   object Arch {
-    case object x86_64 extends Arch {
-      override def string =
-        os match {
-          case OS.Windows => "x86"
-          case _          => "x64"
-        }
-    }
-    case object arm64 extends Arch {
-      override def string = "arm64"
-    }
+    case object Intel extends Arch {}
+    case object Arm extends Arch {}
 
-    val all = List(x86_64, arm64)
-  }
-
-  case class Target(os: OS, arch: Arch) {
-    def string = arch.string + "-" + os.string
-    def fallback = (os, arch) match {
-      case (OS.MacOS, Arch.arm64) => Some(Target(os, Arch.x86_64))
-      case _                      => None
+    val all = List(Intel, Arm)
+    def detect(osArchProp: String): Arch = normalise(osArchProp) match {
+      case "amd64" | "x64" | "x8664" | "x86" => Intel
+      case "aarch64" | "arm64"               => Arm
     }
   }
 
-  def detectOs(osNameProp: String): OS = normalise(osNameProp) match {
-    case p if p.startsWith("linux")                         => OS.Linux
-    case p if p.startsWith("windows")                       => OS.Windows
-    case p if p.startsWith("osx") || p.startsWith("macosx") => OS.MacOS
-    case _                                                  => OS.Unknown
+  sealed abstract class Bits extends Product with Serializable
+  object Bits {
+    case object x32 extends Bits
+    case object x64 extends Bits
+
+    def detect(sunArchProp: String) =
+      sunArchProp match {
+        case "64" => x64
+        case "32" => x32
+      }
   }
 
-  def detectArch(osArchProp: String): Arch = normalise(osArchProp) match {
-    case "amd64" | "x64" | "x8664" | "x86" => Arch.x86_64
-    case "aarch64" | "arm64"               => Arch.arm64
-  }
+  case class Target(os: OS, arch: Arch, bits: Bits)
 
-  lazy val os = detectOs(sys.props.getOrElse("os.name", ""))
-  lazy val arch = detectArch(sys.props.getOrElse("os.arch", ""))
-  lazy val target = Target(os, arch)
+  lazy val os = OS.detect(sys.props.getOrElse("os.name", ""))
+  lazy val arch = Arch.detect(sys.props.getOrElse("os.arch", ""))
+  lazy val bits = Bits.detect(sys.props.getOrElse("sun.arch.data.model", ""))
+  lazy val target = Target(os, arch, bits)
 
   private def normalise(s: String) =
     s.toLowerCase(java.util.Locale.US).replaceAll("[^a-z0-9]+", "")

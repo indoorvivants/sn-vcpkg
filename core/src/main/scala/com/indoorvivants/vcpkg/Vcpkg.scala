@@ -8,14 +8,54 @@ import java.util.stream.Collectors
 import Platform.OS._
 
 class Vcpkg(
-    binary: File,
-    installation: File,
+    config: Vcpkg.Configuration,
     debug: String => Unit = _ => (),
     error: String => Unit = System.err.println
 ) {
   import sys.process.*
-  private val localArg = s"--x-install-root=$installation"
+  import config.*
+  private val localArg = s"--x-install-root=$installationDir"
   private val root = binary.getParentFile()
+  //   x64-linux
+  // x64-windows
+  // x64-windows-static
+  // x86-windows
+  // arm64-windows
+  // x64-uwp
+  // x64-osx
+  // arm-uwp
+  private val vcpkgTriplet = {
+    import Platform.Arch.*
+    import Platform.OS.*
+    import Platform.Bits
+
+    val archPrefix = Platform.arch match {
+      case Intel =>
+        Platform.bits match {
+          case Bits.x32 => "x86"
+          case Bits.x64 => "x64"
+        }
+      case Arm =>
+        Platform.bits match {
+          case Bits.x32 => "arm32"
+          case Bits.x64 => "arm64"
+        }
+    }
+
+    val os = Platform.os match {
+      case Linux   => "linux"
+      case MacOS   => "osx"
+      case Windows => "windows"
+    }
+
+    val lnk = (linking, Platform.os) match {
+      case (Vcpkg.Linking.Static, Windows)        => Some("static")
+      case (Vcpkg.Linking.Dynamic, Linux | MacOS) => Some("dynamic")
+      case _                                      => None
+    }
+
+    (archPrefix :: os :: lnk.toList).mkString("-")
+  }
 
   private def commandFailed(args: Seq[String], code: Int) = {
     val command = args.mkString("`", " ", "`")
@@ -46,7 +86,7 @@ class Vcpkg(
     getLines(cmd("install", name))
 
   def files(name: String) = {
-    val triplet = Platform.target.string
+    val triplet = vcpkgTriplet
     val installationName = name + "_" + triplet
     val location = root / "packages" / installationName
 
@@ -63,6 +103,16 @@ class Vcpkg(
 }
 
 object Vcpkg {
+  sealed trait Linking
+  object Linking {
+    case object Static extends Linking
+    case object Dynamic extends Linking
+  }
+  case class Configuration(
+      binary: File,
+      installationDir: File,
+      linking: Linking
+  )
   case class Dependency(name: String, features: List[String])
   object Dependency {
     def parse(s: String) =
