@@ -45,6 +45,7 @@ lazy val core = projectMatrix
   .settings(publishing)
   .settings(
     name := "vcpkg-core",
+    libraryDependencies += "dev.dirs" % "directories" % "26",
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
     scalacOptions += "-Xsource:3"
@@ -54,10 +55,9 @@ lazy val `sbt-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(scala212))
   .in(file("sbt-plugin"))
   .dependsOn(core)
-  .enablePlugins(ScriptedPlugin)
+  .enablePlugins(ScriptedPlugin, SbtPlugin)
   .settings(publishing)
   .settings(
-    libraryDependencies += "dev.dirs" % "directories" % "26",
     name := """sbt-vcpkg""",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
@@ -75,7 +75,6 @@ lazy val `mill-plugin` = projectMatrix
   .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
-    libraryDependencies += "dev.dirs" % "directories" % "26",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
     libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.11" % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")

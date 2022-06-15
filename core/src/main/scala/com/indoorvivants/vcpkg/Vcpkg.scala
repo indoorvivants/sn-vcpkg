@@ -6,6 +6,8 @@ import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
 import Platform.OS._
+import com.indoorvivants.vcpkg.Vcpkg.Logs.Buffer
+import com.indoorvivants.vcpkg.Vcpkg.Logs.Redirect
 
 class Vcpkg(
     config: Vcpkg.Configuration,
@@ -16,14 +18,6 @@ class Vcpkg(
   import config.*
   private val localArg = s"--x-install-root=$installationDir"
   private val root = binary.getParentFile()
-  //   x64-linux
-  // x64-windows
-  // x64-windows-static
-  // x86-windows
-  // arm64-windows
-  // x64-uwp
-  // x64-osx
-  // arm-uwp
   private val vcpkgTriplet = {
     import Platform.Arch.*
     import Platform.OS.*
@@ -67,8 +61,11 @@ class Vcpkg(
 
   private def getLines(args: Seq[String]) = {
     import sys.process.Process
-    val logs = Vcpkg.logCollector
-    val p = Process.apply(args).run(logs.logger).exitValue()
+    val logs = Vcpkg.logCollector(
+      out = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(debug)),
+      err = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(debug))
+    )
+    val p = Process.apply(args, cwd = root).run(logs.logger).exitValue()
 
     if (p != 0) {
       logs.dump(error)
@@ -204,15 +201,36 @@ object Vcpkg {
     }
   }
 
-  def logCollector = {
+  object Logs {
+    sealed trait Collect extends Product with Serializable
+    case object Buffer extends Collect
+    case class Redirect(to: String => Unit) extends Collect
+  }
+
+  def logCollector(
+      out: Set[Logs.Collect] = Set(Logs.Buffer),
+      err: Set[Logs.Collect] = Set(Logs.Buffer)
+  ) = {
     val stdout = Vector.newBuilder[String]
     val stderr = Vector.newBuilder[String]
 
+    def handle(msg: String, c: Logs.Collect, buffer: String => Unit) =
+      c match {
+        case Buffer       => buffer(msg)
+        case Redirect(to) => to(msg)
+      }
+
     val logger = process.ProcessLogger.apply(
       (o: String) => {
-        stdout += o
+        out.foreach { collector =>
+          handle(o, collector, stdout.+=(_))
+
+        }
       },
-      (e: String) => stderr += e
+      (e: String) =>
+        out.foreach { collector =>
+          handle(e, collector, stderr.+=(_))
+        }
     )
 
     Logs(logger, () => stdout.result(), () => stderr.result())

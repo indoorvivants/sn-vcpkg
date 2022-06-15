@@ -1,6 +1,6 @@
 addSbtPlugin(
   "com.indoorvivants" % "sbt-vcpkg" % sys.env
-    .getOrElse("SBT_VCPKG_VERSION", "0.0.0+3-425e14b0+20220603-1335-SNAPSHOT")
+    .getOrElse("SBT_VCPKG_VERSION", "0.0.3")
 )
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.4")
 
