@@ -17,12 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-11, windows-2022]
         java: [11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup git config
         run: git config --global core.autocrlf false
+        if: runner.os == 'Windows'
+      
+      - name: Configure Pagefile
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 4GB
+          maximum-size: 16GB
         if: runner.os == 'Windows'
       
       - uses: actions/checkout@v2
