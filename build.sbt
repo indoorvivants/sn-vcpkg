@@ -54,7 +54,7 @@ lazy val `sbt-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(scala212))
   .in(file("sbt-plugin"))
   .dependsOn(core)
-  .enablePlugins(ScriptedPlugin)
+  .enablePlugins(ScriptedPlugin, SbtPlugin)
   .settings(publishing)
   .settings(
     name := """sbt-vcpkg""",

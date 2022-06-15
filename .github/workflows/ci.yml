@@ -41,8 +41,11 @@ jobs:
           distribution: 'temurin' 
           java-version: '${{ matrix.java }}'
       
-      - name: Test
-        run: sbt test scripted
+      # - name: Test
+      #   run: sbt test
+      
+      - name: Scripted tests
+        run: sbt scripted
 
   release:
     name: Release
