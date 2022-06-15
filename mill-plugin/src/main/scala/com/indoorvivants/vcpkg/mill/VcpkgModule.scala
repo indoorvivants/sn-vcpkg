@@ -15,9 +15,6 @@ import com.indoorvivants.vcpkg.VcpkgPluginImpl
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
-  private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
-  private val cacheDir = os.Path(dirs.cacheDir)
-
   /** List of vcpkg dependencies
     */
   def vcpkgDependencies: T[Set[String]]
@@ -26,7 +23,7 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     */
   def vcpkgBootstrap: T[Boolean] = true
 
-  def vcpkgBaseDir: T[os.Path] = cacheDir
+  def vcpkgBaseDir: T[os.Path] = os.Path(vcpkgDefaultBaseDir)
 
   /** "Path to vcpkg binary"
     */

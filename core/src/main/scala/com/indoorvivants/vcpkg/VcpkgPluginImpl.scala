@@ -9,6 +9,11 @@ import java.io.File
   */
 trait VcpkgPluginImpl {
 
+  private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
+  private val cacheDir = new File(dirs.cacheDir)
+
+  protected def vcpkgDefaultBaseDir = cacheDir
+
   protected def vcpkgInstallImpl(
       dependencies: Set[String],
       manager: Vcpkg,

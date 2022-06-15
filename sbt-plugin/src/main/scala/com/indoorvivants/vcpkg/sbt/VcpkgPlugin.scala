@@ -27,15 +27,12 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgBaseDir = settingKey[File]("")
   }
 
-  private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
-  private val cacheDir = new File(dirs.cacheDir)
-
   import autoImport._
 
   override lazy val projectSettings = Seq(
     vcpkgBootstrap := true,
     vcpkgDependencies := Set.empty,
-    vcpkgBaseDir := cacheDir,
+    vcpkgBaseDir := vcpkgDefaultBaseDir,
     vcpkgManager := {
       val binary = vcpkgBinary.value
       val installation = vcpkgBaseDir.value / "vcpkg-install"
