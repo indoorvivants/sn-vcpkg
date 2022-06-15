@@ -36,7 +36,14 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       val installation = target.value / "vcpkg-install"
       val logger = sLog.value
       val errorLogger = (s: String) => logger.error(s)
-      VcpkgBootstrap.manager(binary, installation, errorLogger)
+      // TODO: change back to debug
+      val debugLogger = (s: String) => logger.info(s)
+      VcpkgBootstrap.manager(
+        binary,
+        installation,
+        errorLogger = errorLogger,
+        debugLogger = debugLogger
+      )
     },
     vcpkgBinary := {
       vcpkgBinaryImpl(

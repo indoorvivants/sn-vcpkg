@@ -44,7 +44,7 @@ object VcpkgBootstrap {
     )
     import sys.process._
 
-    val collector = Vcpkg.logCollector
+    val collector = Vcpkg.logCollector()
 
     val cmd = Seq(script.toString)
 
@@ -57,7 +57,8 @@ object VcpkgBootstrap {
   def manager(
       binary: File,
       installationDir: File,
-      errorLogger: String => Unit
+      errorLogger: String => Unit,
+      debugLogger: String => Unit = _ => ()
   ) = {
     assert(
       binary.exists(),
@@ -70,6 +71,6 @@ object VcpkgBootstrap {
       linking = Vcpkg.Linking.Static
     )
 
-    new Vcpkg(config, error = errorLogger)
+    new Vcpkg(config, error = errorLogger, debug = debugLogger)
   }
 }
