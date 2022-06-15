@@ -68,7 +68,7 @@ class Vcpkg(
   private def getLines(args: Seq[String]) = {
     import sys.process.Process
     val logs = Vcpkg.logCollector
-    val p = Process.apply(args).run(logs.logger).exitValue()
+    val p = Process.apply(args, cwd = root).run(logs.logger).exitValue()
 
     if (p != 0) {
       logs.dump(error)
