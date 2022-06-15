@@ -10,7 +10,22 @@ import java.io.File
 trait VcpkgPluginImpl {
 
   private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
-  private val cacheDir = new File(dirs.cacheDir)
+  private val cacheDir = {
+    def absoluteFile(path: String): File = new File(path).getAbsoluteFile()
+    def windowsCacheDirectory: File = {
+      val base =
+        sys.env
+          .get("LOCALAPPDATA")
+          .map(absoluteFile)
+          .getOrElse(absoluteFile(sys.props("user.home")) / "AppData" / "Local")
+
+      base / "sbt-vcpkg" / "cache"
+    }
+
+    if (dirs.cacheDir.startsWith("null")) windowsCacheDirectory
+    else
+      new File(dirs.cacheDir)
+  }
 
   protected def vcpkgDefaultBaseDir = cacheDir
 
