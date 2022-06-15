@@ -15,6 +15,9 @@ import com.indoorvivants.vcpkg.VcpkgPluginImpl
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
+  private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
+  private val cacheDir = os.Path(dirs.cacheDir)
+
   /** List of vcpkg dependencies
     */
   def vcpkgDependencies: T[Set[String]]
@@ -23,9 +26,22 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     */
   def vcpkgBootstrap: T[Boolean] = true
 
+  def vcpkgBaseDir: T[os.Path] = cacheDir
+
+  /** "Path to vcpkg binary"
+    */
+  def vcpkgBinary: T[os.Path] = T {
+    val ioFile = vcpkgBinaryImpl(
+      targetFolder = vcpkgBaseDir().toIO,
+      logInfo = T.log.info(_),
+      logError = T.log.error(_)
+    )
+    os.Path(ioFile)
+  }
+
   def vcpkgManager: Worker[Vcpkg] = T.worker {
-    val binary = VcpkgModule.vcpkgBinary().toIO
-    val installation = T.dest / "vcpkg-install"
+    val binary = vcpkgBinary().toIO
+    val installation = vcpkgBaseDir() / "vcpkg-install"
     val errorLogger = (s: String) => T.log.errorStream.println(s)
     VcpkgBootstrap.manager(binary, installation.toIO, errorLogger)
   }
@@ -53,17 +69,5 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 }
 
 object VcpkgModule extends ExternalModule with VcpkgPluginImpl {
-
-  /** "Path to vcpkg binary"
-    */
-  def vcpkgBinary: T[os.Path] = T {
-    val ioFile = vcpkgBinaryImpl(
-      targetFolder = T.dest.toIO,
-      logInfo = T.log.info(_),
-      logError = T.log.error(_)
-    )
-    os.Path(ioFile)
-  }
-
   def millDiscover: Discover[this.type] = mill.define.Discover[this.type]
 }
