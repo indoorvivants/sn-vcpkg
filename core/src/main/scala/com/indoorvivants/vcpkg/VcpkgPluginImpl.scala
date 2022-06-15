@@ -78,7 +78,7 @@ trait VcpkgPluginImpl {
 
       binary
     } else {
-      logInfo("Cloning and doing the whole shebang")
+      logInfo(s"Cloning microsoft/vcpkg into $destination")
       VcpkgBootstrap.clone(destination)
       VcpkgBootstrap.launchBootstrap(destination, logError)
 
