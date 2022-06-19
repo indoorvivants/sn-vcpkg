@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-11, windows-2019]
         java: [11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,7 +42,11 @@ jobs:
           java-version: '${{ matrix.java }}'
       
       - name: Test
-        run: sbt test scripted
+        run: sbt test
+
+      - name: Scripted tests
+        run: sbt scripted
+        if: runner.os != 'Windows'
 
   release:
     name: Release

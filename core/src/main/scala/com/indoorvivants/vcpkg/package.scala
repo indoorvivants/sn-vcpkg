@@ -10,4 +10,20 @@ package object vcpkg {
       file.toPath.resolve(s).toFile
   }
 
+  private[vcpkg] def commandFailed(
+      args: Seq[String],
+      code: Int,
+      extraEnv: Map[String, String] = Map.empty
+  ) = {
+    val command = args.mkString("`", " ", "`")
+    val env =
+      if (extraEnv.nonEmpty)
+        ", env: " + extraEnv.toSeq
+          .sortBy(_._1)
+          .map { case (k, v) => s"$k=$v" }
+          .mkString(", ")
+      else ""
+    throw new Exception(s"Command $command failed with exit code $code$env")
+  }
+
 }

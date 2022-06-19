@@ -1,16 +1,17 @@
 package com.indoorvivants.vcpkg.sbt
 
-import sbt._
-import sbt.Keys._
-import sbt.plugins.JvmPlugin
-import java.util.Arrays
-import scala.sys.process
-import java.nio.file.Files
-import java.util.stream.Collectors
+import com.indoorvivants.vcpkg
+import com.indoorvivants.vcpkg.Platform.OS._
 import com.indoorvivants.vcpkg.Vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
-import com.indoorvivants.vcpkg.Platform.OS._
-import com.indoorvivants.vcpkg
+import sbt.Keys._
+import sbt._
+import sbt.plugins.JvmPlugin
+
+import java.nio.file.Files
+import java.util.Arrays
+import java.util.stream.Collectors
+import scala.sys.process
 
 object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
 
@@ -24,6 +25,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgLinkingArguments = settingKey[Vector[String]]("")
     val vcpkgCompilationArguments = settingKey[Vector[String]]("")
     val vcpkgManager = settingKey[Vcpkg]("")
+    val vcpkgConfigurator = settingKey[vcpkg.PkgConfig]("")
     val vcpkgBaseDir = settingKey[File]("")
   }
 
@@ -45,6 +47,11 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
         errorLogger = errorLogger,
         debugLogger = debugLogger
       )
+    },
+    vcpkgConfigurator := {
+      val _ = vcpkgInstall.value
+
+      vcpkgManager.value.pkgConfig
     },
     vcpkgBinary := {
       vcpkgBinaryImpl(

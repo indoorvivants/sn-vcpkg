@@ -18,7 +18,11 @@ class Vcpkg(
   import config.*
   private val localArg = s"--x-install-root=$installationDir"
   private val root = binary.getParentFile()
-  private val vcpkgTriplet = {
+  private val libDir = installationDir / vcpkgTriplet / "lib"
+
+  private val pkgConfigDir = libDir / "pkgconfig"
+
+  private lazy val vcpkgTriplet = {
     import Platform.Arch.*
     import Platform.OS.*
     import Platform.Bits
@@ -49,11 +53,6 @@ class Vcpkg(
     }
 
     (archPrefix :: os :: lnk.toList).mkString("-")
-  }
-
-  private def commandFailed(args: Seq[String], code: Int) = {
-    val command = args.mkString("`", " ", "`")
-    throw new Exception(s"Command $command failed with exit code $code")
   }
 
   private def cmd(args: String*) =
@@ -96,6 +95,8 @@ class Vcpkg(
   def includes(library: String) = {
     files(library).includeDir
   }
+
+  def pkgConfig = new PkgConfig(pkgConfigDir, error = error, debug = debug)
 
 }
 
@@ -182,14 +183,14 @@ object Vcpkg {
 
     def dynamicLibraries = {
       val extension = Platform.os match {
-        case Linux   => ".so"
-        case MacOS   => ".dylib"
-        case Unknown => ".so"
-        case Windows => ".dll"
+        case Linux | Unknown => ".so"
+        case MacOS           => ".dylib"
+        case Windows         => ".dll"
       }
       walk(libDir.toPath, _.getFileName.toString.endsWith(extension))
     }
 
+    def pkgConfigDir = libDir / "pkgconfig"
   }
 
   case class Logs(
