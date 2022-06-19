@@ -174,23 +174,51 @@ object Vcpkg {
       else Vector.empty
 
     def staticLibraries = {
-      val extension = Platform.os match {
-        case Windows => ".lib"
-        case _       => ".a"
-      }
-      walk(libDir.toPath, _.getFileName.toString.endsWith(extension))
+      walk(
+        libDir.toPath,
+        _.getFileName.toString.endsWith(FilesInfo.staticLibExtension)
+      )
     }
 
     def dynamicLibraries = {
-      val extension = Platform.os match {
-        case Linux | Unknown => ".so"
-        case MacOS           => ".dylib"
-        case Windows         => ".dll"
-      }
-      walk(libDir.toPath, _.getFileName.toString.endsWith(extension))
+      walk(
+        libDir.toPath,
+        _.getFileName.toString.endsWith(FilesInfo.dynamicLibExtension)
+      )
     }
 
     def pkgConfigDir = libDir / "pkgconfig"
+  }
+
+  object FilesInfo {
+    lazy val dynamicLibExtension = Platform.os match {
+      case Linux | Unknown => ".so"
+      case MacOS           => ".dylib"
+      case Windows         => ".dll"
+    }
+
+    lazy val staticLibExtension = Platform.os match {
+      case Windows => ".lib"
+      case _       => ".a"
+    }
+
+    def dynamicLibName(name: String) = {
+      val base = Platform.os match {
+        case Linux | Unknown | MacOS => "lib" + name
+        case Windows                 => name
+      }
+
+      base + dynamicLibExtension
+    }
+
+    def staticLibName(name: String) = {
+      val base = Platform.os match {
+        case Linux | Unknown | MacOS => "lib" + name
+        case Windows                 => name
+      }
+
+      base + staticLibExtension
+    }
   }
 
   case class Logs(

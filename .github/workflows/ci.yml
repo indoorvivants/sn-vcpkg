@@ -24,13 +24,17 @@ jobs:
       - name: Setup git config
         run: git config --global core.autocrlf false
         if: runner.os == 'Windows'
-      
-      - name: Configure Pagefile
-        uses: al-cheb/configure-pagefile-action@v1.2
-        with:
-          minimum-size: 4GB
-          maximum-size: 16GB
+
+      - name: Install pkg-config on Windows
+        run: choco install pkgconfiglite
         if: runner.os == 'Windows'
+      
+      # - name: Configure Pagefile
+      #   uses: al-cheb/configure-pagefile-action@v1.2
+      #   with:
+      #     minimum-size: 4GB
+      #     maximum-size: 16GB
+      #   if: runner.os == 'Windows'
       
       - uses: actions/checkout@v2
 

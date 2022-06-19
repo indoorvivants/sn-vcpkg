@@ -4,6 +4,7 @@ import utest._
 import mill._
 import mill.util.TestEvaluator
 import mill.util.TestUtil
+import com.indoorvivants.vcpkg.Vcpkg
 
 object VcpkgModuleSpec extends utest.TestSuite {
 
@@ -11,7 +12,7 @@ object VcpkgModuleSpec extends utest.TestSuite {
     test("base") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
-          def vcpkgDependencies = T(Set("libuv"))
+          def vcpkgDependencies = T(Set("cmark"))
         }
       }
 
@@ -23,23 +24,52 @@ object VcpkgModuleSpec extends utest.TestSuite {
     test("pkg-config") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
-          def vcpkgDependencies = T(Set("libuv", "cjson"))
+          def vcpkgDependencies = T(Set("cmark", "cjson"))
         }
       }
 
       val eval = new TestEvaluator(build)
       val Right((pkgConfig, _)) = eval(build.foo.vcpkgConfigurator)
 
+      val includes =
+        includePaths(pkgConfig.compilationFlags("libcmark", "libcjson"))
+
+      val libNames =
+        dynamicLibs(pkgConfig.linkingFlags("libcmark", "libcjson"))
+
+      val paths = libPaths(pkgConfig.linkingFlags("libcmark", "libcjson"))
+
+      assert(includes.exists(p => (p / "cmark.h").toIO.exists()))
+      assert(includes.exists(p => (p / "cJSON.h").toIO.exists()))
+
       assert(
-        pkgConfig.compilationFlags("libuv").exists(_.contains("libuv"))
+        paths.exists { p =>
+          (p / Vcpkg.FilesInfo.dynamicLibName("cmark")).toIO.exists() ||
+          (p / Vcpkg.FilesInfo.staticLibName("cmark")).toIO.exists()
+        }
       )
       assert(
-        pkgConfig
-          .compilationFlags("libcjson")
-          .exists(_.contains("cjson"))
+        paths.exists { p =>
+          (p / Vcpkg.FilesInfo.dynamicLibName("cjson")).toIO.exists() ||
+          (p / Vcpkg.FilesInfo.staticLibName("cjson")).toIO.exists()
+        }
       )
+
+      assert(libNames.contains("cmark"))
+      assert(libNames.contains("cjson"))
 
     }
   }
+
+  def includePaths(args: Seq[String]) =
+    args.collect { case s"-I$path" =>
+      os.Path(path)
+    }
+
+  def dynamicLibs(args: Seq[String]) =
+    args.collect { case s"-l$name" => name }
+
+  def libPaths(args: Seq[String]) =
+    args.collect { case s"-L$path" => os.Path(path) }
 
 }

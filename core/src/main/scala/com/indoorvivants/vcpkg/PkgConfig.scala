@@ -1,8 +1,18 @@
 package com.indoorvivants.vcpkg
 
 import java.io.File
+import com.indoorvivants.vcpkg.Platform.OS.Linux
+import com.indoorvivants.vcpkg.Platform.OS.MacOS
+import com.indoorvivants.vcpkg.Platform.OS.Unknown
+import com.indoorvivants.vcpkg.Platform.OS.Windows
 
 class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
+
+  lazy val binaryName = Platform.os match {
+    case Windows => "pkg-config.exe"
+    case _       => "pkg-config"
+  }
+
   def compilationFlags(packages: String*): Seq[String] =
     updateCompilationFlags(Seq.empty, packages *)
 
@@ -33,7 +43,7 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       current: Seq[String],
       packages: String*
   ): Seq[String] = {
-    val cmd = Seq("pkg-config", "--cflags") ++ packages
+    val cmd = Seq(binaryName, "--cflags") ++ packages
     getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
   }
 
@@ -41,7 +51,7 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       current: Seq[String],
       packages: String*
   ): Seq[String] = {
-    val cmd = Seq("pkg-config", "--libs") ++ packages
+    val cmd = Seq(binaryName, "--libs") ++ packages
     getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
   }
 
