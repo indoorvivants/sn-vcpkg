@@ -1,17 +1,19 @@
 package com.indoorvivants.vcpkg.mill
 
-import mill._
-import java.util.Arrays
-import scala.sys.process
-import java.nio.file.Files
-import java.util.stream.Collectors
+import com.indoorvivants.vcpkg.PkgConfig
+import com.indoorvivants.vcpkg.Platform.OS._
 import com.indoorvivants.vcpkg.Vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
-import com.indoorvivants.vcpkg.Platform.OS._
-import mill.define.Worker
-import mill.define.ExternalModule
-import mill.define.Discover
 import com.indoorvivants.vcpkg.VcpkgPluginImpl
+import mill._
+import mill.define.Discover
+import mill.define.ExternalModule
+import mill.define.Worker
+
+import java.nio.file.Files
+import java.util.Arrays
+import java.util.stream.Collectors
+import scala.sys.process
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
@@ -24,6 +26,11 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
   def vcpkgBootstrap: T[Boolean] = true
 
   def vcpkgBaseDir: T[os.Path] = os.Path(vcpkgDefaultBaseDir)
+
+  def vcpkgConfigurator: Worker[PkgConfig] = T.worker {
+    vcpkgInstall()
+    vcpkgManager().pkgConfig
+  }
 
   /** "Path to vcpkg binary"
     */
