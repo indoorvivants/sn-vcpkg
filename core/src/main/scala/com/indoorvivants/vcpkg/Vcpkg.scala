@@ -80,7 +80,7 @@ class Vcpkg(
     Vcpkg.Dependencies.parse(getLines(cmd("depend-info", name)))
 
   def install(name: String) =
-    getLines(cmd("install", name, s"--triplet=$vcpkgTriplet"))
+    getLines(cmd("install", name, s"--triplet=$vcpkgTriplet", "--recurse"))
 
   def files(name: String) = {
     val triplet = vcpkgTriplet
@@ -161,14 +161,16 @@ object Vcpkg {
         path: java.nio.file.Path,
         predicate: java.nio.file.Path => Boolean
     ): Vector[File] =
-      Files
-        .walk(path)
-        .filter(p => predicate(p))
-        .collect(Collectors.toList())
-        .asScala
-        .toList
-        .map(_.toFile)
-        .toVector
+      if (path.toFile().isDirectory)
+        Files
+          .walk(path)
+          .filter(p => predicate(p))
+          .collect(Collectors.toList())
+          .asScala
+          .toList
+          .map(_.toFile)
+          .toVector
+      else Vector.empty
 
     def staticLibraries = {
       val extension = Platform.os match {
