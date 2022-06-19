@@ -45,7 +45,8 @@ object VcpkgModuleSpec extends utest.TestSuite {
       assert(
         paths.exists { p =>
           (p / Vcpkg.FilesInfo.dynamicLibName("cmark")).toIO.exists() ||
-          (p / Vcpkg.FilesInfo.staticLibName("cmark")).toIO.exists()
+          (p / Vcpkg.FilesInfo.staticLibName("cmark")).toIO.exists() ||
+          (p / Vcpkg.FilesInfo.staticLibName("cmark_static")).toIO.exists()
         }
       )
       assert(
