@@ -25,6 +25,9 @@ object VcpkgBootstrap {
   def clone(directory: File) = {
     import org.eclipse.jgit.api.Git
 
+    if(!directory.getParentFile().exists())
+      directory.getParentFile().mkdirs()
+
     val repo = Git
       .cloneRepository()
       .setURI(REMOTE_URI)
