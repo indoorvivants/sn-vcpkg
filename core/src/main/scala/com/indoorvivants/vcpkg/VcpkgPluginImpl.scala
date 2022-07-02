@@ -47,7 +47,9 @@ trait VcpkgPluginImpl {
 
     allActualDependencies.map { dep =>
       logInfo(s"Installing ${dep.name}")
-      manager.install(dep.name)
+      VcpkgPluginImpl.synchronized {
+        manager.install(dep.name)
+      }
       manager.files(dep.name)
     }.toVector
   }
@@ -94,13 +96,17 @@ trait VcpkgPluginImpl {
     if (binary.exists) binary
     else if (bootstrapScript.exists) {
       logInfo("Bootstrapping vcpkg...")
-      VcpkgBootstrap.launchBootstrap(destination, logError)
+      VcpkgPluginImpl.synchronized {
+        VcpkgBootstrap.launchBootstrap(destination, logError)
+      }
 
       binary
     } else {
       logInfo(s"Cloning microsoft/vcpkg into $destination")
-      VcpkgBootstrap.clone(destination)
-      VcpkgBootstrap.launchBootstrap(destination, logError)
+      VcpkgPluginImpl.synchronized {
+        VcpkgBootstrap.clone(destination)
+        VcpkgBootstrap.launchBootstrap(destination, logError)
+      }
 
       binary
     }
@@ -126,3 +132,5 @@ trait VcpkgPluginImpl {
   }
 
 }
+
+object VcpkgPluginImpl
