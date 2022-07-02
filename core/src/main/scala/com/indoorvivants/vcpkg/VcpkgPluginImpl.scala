@@ -93,22 +93,21 @@ trait VcpkgPluginImpl {
     val binary = destination / VcpkgBootstrap.BINARY_NAME
     val bootstrapScript = destination / VcpkgBootstrap.BOOTSTRAP_SCRIPT
 
-    if (binary.exists) binary
-    else if (bootstrapScript.exists) {
-      logInfo("Bootstrapping vcpkg...")
-      VcpkgPluginImpl.synchronized {
-        VcpkgBootstrap.launchBootstrap(destination, logError)
-      }
+    VcpkgPluginImpl.synchronized {
 
-      binary
-    } else {
-      logInfo(s"Cloning microsoft/vcpkg into $destination")
-      VcpkgPluginImpl.synchronized {
+      if (binary.exists) binary
+      else if (bootstrapScript.exists) {
+        logInfo("Bootstrapping vcpkg...")
+        VcpkgBootstrap.launchBootstrap(destination, logError)
+
+        binary
+      } else {
+        logInfo(s"Cloning microsoft/vcpkg into $destination")
         VcpkgBootstrap.clone(destination)
         VcpkgBootstrap.launchBootstrap(destination, logError)
-      }
 
-      binary
+        binary
+      }
     }
   }
 
