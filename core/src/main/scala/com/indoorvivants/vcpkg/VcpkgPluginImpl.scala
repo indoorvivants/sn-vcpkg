@@ -38,7 +38,7 @@ trait VcpkgPluginImpl {
 
     val allActualDependencies = deps
       .flatMap { name =>
-        val info = manager.dependencyInfo(name.name)
+        val info = VcpkgPluginImpl.synchronized(manager.dependencyInfo(name.name))
         val transitive = info.allTransitive(name)
 
         name +: transitive
