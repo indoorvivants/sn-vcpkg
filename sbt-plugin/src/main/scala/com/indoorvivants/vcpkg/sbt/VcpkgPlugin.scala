@@ -20,13 +20,13 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       settingKey[Set[String]]("List of vcpkg dependencies")
     val vcpkgBootstrap =
       settingKey[Boolean]("whether to bootstrap vcpkg automatically")
-    val vcpkgBinary = settingKey[File]("Path to vcpkg binary")
-    val vcpkgInstall = settingKey[Vector[Vcpkg.FilesInfo]]("")
-    val vcpkgLinkingArguments = settingKey[Vector[String]]("")
-    val vcpkgCompilationArguments = settingKey[Vector[String]]("")
-    val vcpkgManager = settingKey[Vcpkg]("")
-    val vcpkgConfigurator = settingKey[vcpkg.PkgConfig]("")
-    val vcpkgBaseDir = settingKey[File]("")
+    val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
+    val vcpkgInstall = taskKey[Vector[Vcpkg.FilesInfo]]("")
+    val vcpkgLinkingArguments = taskKey[Vector[String]]("")
+    val vcpkgCompilationArguments = taskKey[Vector[String]]("")
+    val vcpkgManager = taskKey[Vcpkg]("")
+    val vcpkgConfigurator = taskKey[vcpkg.PkgConfig]("")
+    val vcpkgBaseDir = taskKey[File]("")
   }
 
   import autoImport._
