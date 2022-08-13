@@ -21,7 +21,7 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
+lazy val scala212 = "2.12.16"
 lazy val scala3 = "3.1.2"
 lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
