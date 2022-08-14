@@ -47,7 +47,7 @@ lazy val core = projectMatrix
     name := "vcpkg-core",
     libraryDependencies += "dev.dirs" % "directories" % "26",
     crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r",
     scalacOptions += "-Xsource:3"
   )
 
