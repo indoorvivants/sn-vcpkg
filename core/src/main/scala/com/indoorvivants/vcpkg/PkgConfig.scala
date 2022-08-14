@@ -44,7 +44,9 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       packages: String*
   ): Seq[String] = {
     val cmd = Seq(binaryName, "--cflags") ++ packages
-    current ++ getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
+    current ++ getLines(cmd)
+      .flatMap(CommandParser.tokenize(_))
+      .filterNot(current.contains)
   }
 
   def updateLinkingFlags(
@@ -52,7 +54,9 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       packages: String*
   ): Seq[String] = {
     val cmd = Seq(binaryName, "--libs") ++ packages
-    current ++ getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
+    current ++ getLines(cmd)
+      .flatMap(CommandParser.tokenize(_))
+      .filterNot(current.contains)
   }
 
 }

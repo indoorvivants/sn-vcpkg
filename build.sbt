@@ -22,7 +22,7 @@ sonatypeProfileName := "com.indoorvivants"
 
 lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
-lazy val scala3 = "3.1.2"
+lazy val scala3 = "3.1.3"
 lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
 lazy val publishing = Seq(
@@ -75,7 +75,8 @@ lazy val `mill-plugin` = projectMatrix
   .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
+
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.5",
     libraryDependencies += "com.lihaoyi" %% "utest" % "0.8.0" % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
