@@ -75,7 +75,7 @@ lazy val `mill-plugin` = projectMatrix
   .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.6",
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.7",
     libraryDependencies += "com.lihaoyi" %% "utest" % "0.8.0" % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
