@@ -1,16 +1,14 @@
 package com.indoorvivants.vcpkg
 
 import java.io.File
-import com.indoorvivants.vcpkg.Platform.OS.Linux
-import com.indoorvivants.vcpkg.Platform.OS.MacOS
-import com.indoorvivants.vcpkg.Platform.OS.Unknown
-import com.indoorvivants.vcpkg.Platform.OS.Windows
+
+import com.indoorvivants.detective.Platform
 
 class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
 
   lazy val binaryName = Platform.os match {
-    case Windows => "pkg-config.exe"
-    case _       => "pkg-config"
+    case Platform.OS.Windows => "pkg-config.exe"
+    case _                   => "pkg-config"
   }
 
   def compilationFlags(packages: String*): Seq[String] =
@@ -44,7 +42,9 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       packages: String*
   ): Seq[String] = {
     val cmd = Seq(binaryName, "--cflags") ++ packages
-    current ++ getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
+    current ++ getLines(cmd)
+      .flatMap(CommandParser.tokenize(_))
+      .filterNot(current.contains)
   }
 
   def updateLinkingFlags(
@@ -52,7 +52,9 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       packages: String*
   ): Seq[String] = {
     val cmd = Seq(binaryName, "--libs") ++ packages
-    current ++ getLines(cmd).flatMap(CommandParser.tokenize(_)).filterNot(current.contains)
+    current ++ getLines(cmd)
+      .flatMap(CommandParser.tokenize(_))
+      .filterNot(current.contains)
   }
 
 }

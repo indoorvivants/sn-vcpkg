@@ -5,6 +5,7 @@ import scala.sys.process
 import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
+import com.indoorvivants.detective.Platform
 import Platform.OS._
 
 object VcpkgBootstrap {

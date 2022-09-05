@@ -46,6 +46,7 @@ lazy val core = projectMatrix
   .settings(
     name := "vcpkg-core",
     libraryDependencies += "dev.dirs" % "directories" % "26",
+    libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2",
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
     scalacOptions += "-Xsource:3"

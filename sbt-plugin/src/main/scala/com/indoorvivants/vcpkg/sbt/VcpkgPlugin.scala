@@ -1,7 +1,7 @@
 package com.indoorvivants.vcpkg.sbt
 
 import com.indoorvivants.vcpkg
-import com.indoorvivants.vcpkg.Platform.OS._
+import com.indoorvivants.detective.Platform.OS._
 import com.indoorvivants.vcpkg.Vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import sbt.Keys._

@@ -1,6 +1,6 @@
 package com.indoorvivants.vcpkg
 
-import Platform.OS._
+import com.indoorvivants.detective.Platform.OS._
 import java.io.File
 
 /** A bunch of build-tool agnostic functions. The trait can be mixed in SBT's or
@@ -38,7 +38,8 @@ trait VcpkgPluginImpl {
 
     val allActualDependencies = deps
       .flatMap { name =>
-        val info = VcpkgPluginImpl.synchronized(manager.dependencyInfo(name.name))
+        val info =
+          VcpkgPluginImpl.synchronized(manager.dependencyInfo(name.name))
         val transitive = info.allTransitive(name)
 
         name +: transitive
