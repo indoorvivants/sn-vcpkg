@@ -21,7 +21,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgBootstrap =
       settingKey[Boolean]("whether to bootstrap vcpkg automatically")
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
-    val vcpkgInstall = taskKey[Vector[Vcpkg.FilesInfo]]("")
+    val vcpkgInstall = taskKey[Vector[Vcpkg.FilesInfo]]("Invoke Vcpkg and attempt to install packages")
     val vcpkgLinkingArguments = taskKey[Vector[String]]("")
     val vcpkgCompilationArguments = taskKey[Vector[String]]("")
     val vcpkgManager = taskKey[Vcpkg]("")
@@ -41,6 +41,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       val logger = sLog.value
       val errorLogger = (s: String) => logger.error(s)
       val debugLogger = (s: String) => logger.debug(s)
+
       VcpkgBootstrap.manager(
         binary,
         installation,
