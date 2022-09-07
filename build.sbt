@@ -21,8 +21,8 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
-lazy val scala3 = "3.1.2"
+lazy val scala212 = "2.12.16"
+lazy val scala3 = "3.1.3"
 lazy val supportedScalaVersions = List(scala213, scala212, scala3)
 
 lazy val publishing = Seq(
@@ -48,7 +48,7 @@ lazy val core = projectMatrix
     libraryDependencies += "dev.dirs" % "directories" % "26",
     libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2",
     crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r",
     scalacOptions += "-Xsource:3"
   )
 
@@ -76,8 +76,8 @@ lazy val `mill-plugin` = projectMatrix
   .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.4",
-    libraryDependencies += "com.lihaoyi" %% "utest" % "0.7.11" % Test,
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.7",
+    libraryDependencies += "com.lihaoyi" %% "utest" % "0.8.1" % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
