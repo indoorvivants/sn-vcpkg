@@ -51,7 +51,7 @@ jobs:
         if: runner.os != 'Windows'
 
       - name: Cold start tests (docker)
-        run: docker build -t . sbt-vcpkg-tests
+        run: docker build . -t sbt-vcpkg-tests
         if: matrix.os == 'ubuntu-20.04'
 
   release:
