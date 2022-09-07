@@ -14,7 +14,7 @@ import scalanative.unsigned.*
 @main def hello = 
 
   Zone { implicit z =>
-    val loop = uv_loop_t()
+    val loop = uv_default_loop()
 
     uv_loop_init(loop)
 
@@ -37,7 +37,7 @@ import scalanative.unsigned.*
       }
     }
 
-    uv_timer_start(timer, cb, 500.toULong, 500.toULong)
+    uv_timer_start(timer, cb, 500.toULong, 0.toULong)
 
     uv_run(loop, uv_run_mode.UV_RUN_DEFAULT)
 
