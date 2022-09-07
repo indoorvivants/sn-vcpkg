@@ -13,12 +13,11 @@ env:
 
 jobs:
   build:
-    name: CI ${{ matrix.os }} (java ${{ matrix.java }})
+    name: CI ${{ matrix.os }} 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
-        java: [11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup git config
@@ -38,10 +37,10 @@ jobs:
       
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' 
-          java-version: '${{ matrix.java }}'
+          java-version: 17
           cache: sbt
       
       - name: Test
@@ -63,12 +62,15 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: coursier/cache-action@v3      
-      - uses: actions/setup-java@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' 
           java-version: '11'
+          cache: sbt
       - run: git fetch --unshallow
       - name: Publish ${{ github.ref }}
         run: sbt ci-release
