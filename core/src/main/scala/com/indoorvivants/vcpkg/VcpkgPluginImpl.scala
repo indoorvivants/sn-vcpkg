@@ -49,7 +49,7 @@ trait VcpkgPluginImpl {
       else {
         if (maxAttempts != remainingAttempts) {
           val del =
-            Math.pow(2.0, maxAttempts - remainingAttempts + 1) * delay.toMillis
+            Math.pow(2.0, maxAttempts - remainingAttempts - 1) * delay.toMillis
           System.err.println(
             s"[sbt/mill vcpkg] Retrying `$msg` in $del millis ($remainingAttempts attempts left)..."
           )
@@ -77,7 +77,7 @@ trait VcpkgPluginImpl {
     val allActualDependencies = deps
       .flatMap { name =>
         val info =
-          retryable(s"figuring out transitive depdencies of ${name.name}") {
+          retryable(s"figuring out transitive dependencies of ${name.name}") {
             VcpkgPluginImpl.synchronized(manager.dependencyInfo(name.name))
           }.getOrElse(
             throw new Exception(
