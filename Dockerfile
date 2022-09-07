@@ -12,6 +12,8 @@ RUN apt update && apt install -y curl && \
 
 COPY . /sources
 
+RUN apt install -y git
+
 ENV LLVM_BIN "/usr/lib/llvm-13/bin"
 ENV CC "/usr/lib/llvm-13/bin/clang"
 ENV PATH="${PATH}:/root/.local/share/coursier/bin"
