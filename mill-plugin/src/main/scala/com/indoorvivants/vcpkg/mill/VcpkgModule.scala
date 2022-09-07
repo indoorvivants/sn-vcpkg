@@ -1,7 +1,7 @@
 package com.indoorvivants.vcpkg.mill
 
 import com.indoorvivants.vcpkg.PkgConfig
-import com.indoorvivants.vcpkg.Platform.OS._
+import com.indoorvivants.detective.Platform.OS._
 import com.indoorvivants.vcpkg.Vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import com.indoorvivants.vcpkg.VcpkgPluginImpl

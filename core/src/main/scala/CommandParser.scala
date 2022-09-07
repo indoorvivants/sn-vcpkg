@@ -25,8 +25,9 @@ import scala.annotation.tailrec
 /** A simple enough command line parser.
   */
 object CommandParser {
-  private final val DQ = '"'
-  private final val SQ = '\''
+  private final val DQ: Char = '"'
+  private final val SQ: Char = '\''
+  private final val DONE: Char = -1.toChar
 
   /** Split the line into tokens separated by whitespace or quotes.
     *
@@ -43,11 +44,11 @@ object CommandParser {
     var start = 0
     val qpos = new ArrayBuffer[Int](16) // positions of paired quotes
 
-    def cur: Int = if (done) -1 else in.charAt(pos)
+    def cur: Char = if (done) DONE else in.charAt(pos)
     def bump() = pos += 1
     def done = pos >= in.length
 
-    def skipToQuote(q: Int) = {
+    def skipToQuote(q: Char) = {
       var escaped = false
       def terminal = in.charAt(pos) match {
         case _ if escaped => escaped = false; false
@@ -65,7 +66,7 @@ object CommandParser {
           { qpos += pos; bump(); skipToQuote(q) } && {
             qpos += pos; bump(); skipToDelim()
           }
-        case -1                   => true
+        case DONE                 => true
         case c if isWhitespace(c) => true
         case _                    => bump(); skipToDelim()
       }

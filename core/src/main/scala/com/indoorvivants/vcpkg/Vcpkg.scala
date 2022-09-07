@@ -5,9 +5,10 @@ import scala.sys.process
 import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
-import Platform.OS._
 import com.indoorvivants.vcpkg.Vcpkg.Logs.Buffer
 import com.indoorvivants.vcpkg.Vcpkg.Logs.Redirect
+
+import com.indoorvivants.detective.Platform
 
 class Vcpkg(
     config: Vcpkg.Configuration,
@@ -191,6 +192,7 @@ object Vcpkg {
   }
 
   object FilesInfo {
+    import Platform.OS._
     lazy val dynamicLibExtension = Platform.os match {
       case Linux | Unknown => ".so"
       case MacOS           => ".dylib"

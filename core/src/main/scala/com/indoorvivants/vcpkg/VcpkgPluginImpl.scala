@@ -1,6 +1,6 @@
 package com.indoorvivants.vcpkg
 
-import Platform.OS._
+import com.indoorvivants.detective.Platform.OS._
 import java.io.File
 
 /** A bunch of build-tool agnostic functions. The trait can be mixed in SBT's or
