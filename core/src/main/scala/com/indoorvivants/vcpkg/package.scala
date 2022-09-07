@@ -26,4 +26,13 @@ package object vcpkg {
     throw new Exception(s"Command $command failed with exit code $code$env")
   }
 
+  private[vcpkg] object NoSuitableCmake
+      extends RuntimeException(
+        "Vcpkg couldn't find a suitable version of Cmake (this error is retryable)"
+      )
+  private[vcpkg] case class UnexpectedDependencyInfo(line: String)
+      extends RuntimeException(
+        s"Couldn't parse `${line.trim}` from vcpkg output as dependency information (this error is fatal)"
+      )
+
 }

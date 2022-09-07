@@ -146,13 +146,20 @@ object Vcpkg {
   object Dependencies {
     def parse(lines: Vector[String]): Dependencies = {
       Dependencies(lines.map { l =>
-        val name :: deps :: Nil = l.split(": ", 2).toList
-        Dependency
-          .parse(name) -> deps
-          .split(", ")
-          .toList
-          .filterNot(_.trim.isEmpty)
-          .map(Dependency.parse)
+        if (l.toLowerCase.contains("a suitable version of cmake"))
+          throw NoSuitableCmake
+        else {
+          l.split(": ", 2).toList match {
+            case name :: deps :: Nil =>
+              Dependency
+                .parse(name) -> deps
+                .split(", ")
+                .toList
+                .filterNot(_.trim.isEmpty)
+                .map(Dependency.parse)
+            case other => throw UnexpectedDependencyInfo(l)
+          }
+        }
       }.toMap)
     }
   }

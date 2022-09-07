@@ -40,7 +40,8 @@ trait VcpkgPluginImpl {
   private def retryable[A](
       msg: String,
       maxAttempts: Int = 5,
-      delay: FiniteDuration = 1.second
+      delay: FiniteDuration = 1.second,
+      filter: Throwable => Boolean
   )(f: => A): Option[A] = {
     @tailrec def go(
         remainingAttempts: Int
@@ -50,6 +51,7 @@ trait VcpkgPluginImpl {
         if (maxAttempts != remainingAttempts) {
           val del =
             Math.pow(2.0, maxAttempts - remainingAttempts - 1) * delay.toMillis
+
           System.err.println(
             s"[sbt/mill vcpkg] Retrying `$msg` in $del millis ($remainingAttempts attempts left)..."
           )
@@ -57,7 +59,9 @@ trait VcpkgPluginImpl {
         }
 
         Try(f) match {
-          case Failure(exception) => go(remainingAttempts - 1)
+          case Failure(exception) if filter(exception) =>
+            go(remainingAttempts - 1)
+          case Failure(exception) => throw exception
           case Success(value)     => Some(value)
         }
 
@@ -77,7 +81,10 @@ trait VcpkgPluginImpl {
     val allActualDependencies = deps
       .flatMap { name =>
         val info =
-          retryable(s"figuring out transitive dependencies of ${name.name}") {
+          retryable(
+            s"figuring out transitive dependencies of ${name.name}",
+            filter = _ == NoSuitableCmake
+          ) {
             VcpkgPluginImpl.synchronized(manager.dependencyInfo(name.name))
           }.getOrElse(
             throw new Exception(

@@ -20,4 +20,4 @@ ENV PATH="${PATH}:/root/.local/share/coursier/bin"
 
 ENV SBT_VCPKG_VERSION dev
 RUN cd /sources && sbt publishLocal
-RUN cd /sources/example && sbt run
+RUN cd /sources/example && sbt clean run
