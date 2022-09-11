@@ -3,7 +3,7 @@ pull_request_rules:
     conditions:
       - author=indoorvivants-steward[bot]
       - body~=labels:.*semver-patch.*
-      - status-success=build
+      - status-success=summary
     actions:
       merge:
         method: merge
