@@ -48,7 +48,7 @@ lazy val core = projectMatrix
     libraryDependencies += "dev.dirs" % "directories" % "26",
     libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2",
     crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.2.0.202206071550-r",
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.3.0.202209071007-r",
     scalacOptions += "-Xsource:3"
   )
 
