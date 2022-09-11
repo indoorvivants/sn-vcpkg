@@ -58,8 +58,7 @@ object VcpkgBootstrap {
   def manager(
       binary: File,
       installationDir: File,
-      errorLogger: String => Unit,
-      debugLogger: String => Unit = _ => ()
+      logger: ExternalLogger
   ) = {
     assert(
       binary.exists(),
@@ -72,6 +71,6 @@ object VcpkgBootstrap {
       linking = Vcpkg.Linking.Static
     )
 
-    new Vcpkg(config, error = errorLogger, debug = debugLogger)
+    new Vcpkg(config, logger)
   }
 }

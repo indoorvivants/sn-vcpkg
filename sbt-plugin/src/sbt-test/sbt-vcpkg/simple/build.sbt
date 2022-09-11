@@ -1,5 +1,5 @@
 version := "0.1"
-scalaVersion := "2.12.16"
+scalaVersion := "3.2.0"
 
 enablePlugins(VcpkgPlugin)
 
@@ -10,7 +10,7 @@ vcpkgDependencies := Set("cmark", "cjson")
 val testPkgConfig = taskKey[Unit]("")
 
 testPkgConfig := {
-  val pkgConfig = vcpkgConfigurator.value
+  val pkgConfig = vcpkgConfigurator.value.pkgConfig
 
   val compilation = pkgConfig.compilationFlags("libcmark", "libcjson")
   val linking = pkgConfig.linkingFlags("libcmark", "libcjson")

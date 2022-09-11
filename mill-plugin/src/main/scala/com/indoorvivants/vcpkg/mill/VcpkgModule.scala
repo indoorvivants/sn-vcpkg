@@ -14,6 +14,9 @@ import java.nio.file.Files
 import java.util.Arrays
 import java.util.stream.Collectors
 import scala.sys.process
+import com.indoorvivants.vcpkg.ExternalLogger
+import com.indoorvivants.vcpkg.VcpkgConfigurator
+import mill.api.Logger
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
@@ -25,18 +28,20 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     */
   def vcpkgBootstrap: T[Boolean] = true
 
-  def vcpkgBaseDir: T[os.Path] = os.Path(vcpkgDefaultBaseDir)
+  def vcpkgBaseDirectory: T[os.Path] = os.Path(vcpkgDefaultBaseDir)
 
-  def vcpkgConfigurator: Worker[PkgConfig] = T.worker {
-    vcpkgInstall()
-    vcpkgManager().pkgConfig
+  def vcpkgConfigurator: Worker[VcpkgConfigurator] = T.worker {
+    val files = vcpkgInstall()
+    val manager = vcpkgManager()
+
+    new VcpkgConfigurator(manager.config, files, millLogger(T.log))
   }
 
   /** "Path to vcpkg binary"
     */
   def vcpkgBinary: T[os.Path] = T {
     val ioFile = vcpkgBinaryImpl(
-      targetFolder = vcpkgBaseDir().toIO,
+      targetFolder = vcpkgBaseDirectory().toIO,
       logInfo = T.log.info(_),
       logError = T.log.error(_)
     )
@@ -45,31 +50,27 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
   def vcpkgManager: Worker[Vcpkg] = T.worker {
     val binary = vcpkgBinary().toIO
-    val installation = vcpkgBaseDir() / "vcpkg-install"
-    val errorLogger = (s: String) => T.log.errorStream.println(s)
-    VcpkgBootstrap.manager(binary, installation.toIO, errorLogger)
+    val installation = vcpkgBaseDirectory() / "vcpkg-install"
+    VcpkgBootstrap.manager(binary, installation.toIO, millLogger(T.log))
   }
 
-  def vcpkgInstall: T[Vector[Vcpkg.FilesInfo]] = T {
+  def vcpkgInstall: T[Map[Vcpkg.Dependency, Vcpkg.FilesInfo]] = T {
     vcpkgInstallImpl(
       dependencies = vcpkgDependencies(),
       manager = vcpkgManager(),
-      logInfo = T.log.info(_: String)
+      logger = millLogger(T.log)
     )
   }
 
-  def vcpkgLinkingArguments: T[Vector[String]] = T {
-    vcpkgLinkingArgumentsImpl(
-      info = vcpkgInstall(),
-      logWarn = T.log.error(_)
+  private def millLogger(log: Logger) = {
+    new ExternalLogger(
+      debug = log.debug(_),
+      info = log.info(_),
+      error = log.error(_),
+      warn = s => log.info("<WARN>" + s)
     )
   }
 
-  def vcpkgCompilationArguments: T[Vector[String]] = T {
-    vcpkgCompilationArgumentsImpl(
-      info = vcpkgInstall()
-    )
-  }
 }
 
 object VcpkgModule extends ExternalModule with VcpkgPluginImpl {

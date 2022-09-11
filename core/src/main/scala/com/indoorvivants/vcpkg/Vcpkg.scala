@@ -11,50 +11,18 @@ import com.indoorvivants.vcpkg.Vcpkg.Logs.Redirect
 import com.indoorvivants.detective.Platform
 
 class Vcpkg(
-    config: Vcpkg.Configuration,
-    debug: String => Unit = _ => (),
-    error: String => Unit = System.err.println
+    val config: Vcpkg.Configuration,
+    logger: ExternalLogger
 ) {
   import sys.process.*
   import config.*
   private val localArg = s"--x-install-root=$installationDir"
-  private val root = binary.getParentFile()
+  private val root = config.vcpkgRoot
   private val libDir = installationDir / vcpkgTriplet / "lib"
 
   private val pkgConfigDir = libDir / "pkgconfig"
 
-  private lazy val vcpkgTriplet = {
-    import Platform.Arch.*
-    import Platform.OS.*
-    import Platform.Bits
-
-    val archPrefix = Platform.arch match {
-      case Intel =>
-        Platform.bits match {
-          case Bits.x32 => "x86"
-          case Bits.x64 => "x64"
-        }
-      case Arm =>
-        Platform.bits match {
-          case Bits.x32 => "arm32"
-          case Bits.x64 => "arm64"
-        }
-    }
-
-    val os = Platform.os match {
-      case Linux   => "linux"
-      case MacOS   => "osx"
-      case Windows => "windows"
-    }
-
-    val lnk = (linking, Platform.os) match {
-      case (Vcpkg.Linking.Static, Windows)        => Some("static")
-      case (Vcpkg.Linking.Dynamic, Linux | MacOS) => Some("dynamic")
-      case _                                      => None
-    }
-
-    (archPrefix :: os :: lnk.toList).mkString("-")
-  }
+  private lazy val vcpkgTriplet = config.vcpkgTriplet(Platform.target)
 
   private def cmd(args: String*) =
     Seq(binary.toString) ++ args ++ Seq(localArg)
@@ -62,16 +30,16 @@ class Vcpkg(
   private def getLines(args: Seq[String]) = {
     import sys.process.Process
     val logs = Vcpkg.logCollector(
-      out = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(debug)),
-      err = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(debug))
+      out = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(logger.debug)),
+      err = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(logger.debug))
     )
     val p = Process.apply(args, cwd = root).run(logs.logger).exitValue()
 
     if (p != 0) {
-      logs.dump(error)
+      logs.dump(logger.error)
       commandFailed(args, p)
     } else {
-      logs.dump(debug)
+      logs.dump(logger.debug)
       logs.stdout()
     }
   }
@@ -81,23 +49,6 @@ class Vcpkg(
 
   def install(name: String) =
     getLines(cmd("install", name, s"--triplet=$vcpkgTriplet", "--recurse"))
-
-  def files(name: String) = {
-    val triplet = vcpkgTriplet
-    val installationName = name + "_" + triplet
-    val location = root / "packages" / installationName
-
-    Vcpkg.FilesInfo(
-      includeDir = location / "include",
-      libDir = location / "lib"
-    )
-  }
-
-  def includes(library: String) = {
-    files(library).includeDir
-  }
-
-  def pkgConfig = new PkgConfig(pkgConfigDir, error = error, debug = debug)
 
 }
 
@@ -111,10 +62,48 @@ object Vcpkg {
       binary: File,
       installationDir: File,
       linking: Linking
-  )
+  ) {
+    def vcpkgRoot: File = binary.getParentFile()
+    def vcpkgTriplet(target: Platform.Target): String = {
+      import Platform.Arch.*
+      import Platform.OS.*
+      import Platform.Bits
+
+      import target.*
+
+      val archPrefix = arch match {
+        case Intel =>
+          Platform.bits match {
+            case Bits.x32 => "x86"
+            case Bits.x64 => "x64"
+          }
+        case Arm =>
+          Platform.bits match {
+            case Bits.x32 => "arm32"
+            case Bits.x64 => "arm64"
+          }
+      }
+
+      val osName = os match {
+        case Linux   => "linux"
+        case MacOS   => "osx"
+        case Windows => "windows"
+      }
+
+      val lnk = (linking, os) match {
+        case (Vcpkg.Linking.Static, Windows)        => Some("static")
+        case (Vcpkg.Linking.Dynamic, Linux | MacOS) => Some("dynamic")
+        case _                                      => None
+      }
+
+      (archPrefix :: osName :: lnk.toList).mkString("-")
+    }
+
+  }
+
   case class Dependency(name: String, features: List[String])
   object Dependency {
-    def parse(s: String) =
+    def parse(s: String): Dependency =
       if (!s.contains('[')) Dependency(s, Nil)
       else {
         val start = s.indexOf('[')

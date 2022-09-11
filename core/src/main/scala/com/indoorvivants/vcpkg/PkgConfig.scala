@@ -4,7 +4,7 @@ import java.io.File
 
 import com.indoorvivants.detective.Platform
 
-class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
+class PkgConfig(baseDir: File, logger: ExternalLogger) {
 
   lazy val binaryName = Platform.os match {
     case Platform.OS.Windows => "pkg-config.exe"
@@ -28,11 +28,11 @@ class PkgConfig(baseDir: File, error: String => Unit, debug: String => Unit) {
       .exitValue()
 
     if (p != 0) {
-      logs.dump(error)
-      error(s"PkgConfig env: $env")
+      logs.dump(logger.error)
+      logger.error(s"PkgConfig env: $env")
       commandFailed(args, p, env)
     } else {
-      logs.dump(debug)
+      logs.dump(logger.debug)
       logs.stdout()
     }
   }
