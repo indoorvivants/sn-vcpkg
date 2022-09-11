@@ -28,15 +28,21 @@ jobs:
           java-version: 17
           cache: sbt
       
-      - name: Test
-        run: sbt test
-
-      - name: Scripted tests
-        run: sbt scripted
+      - name: Tests
+        run: sbt test scripted publishLocal versionDump
 
       - name: Cold start tests (docker)
         run: docker build . -t sbt-vcpkg-tests
-        if: matrix.os == 'ubuntu-20.04'
+        if: startsWith(matrix.os, 'ubuntu-')
+
+      - name: Run example
+        if: startsWith(matrix.os, 'macos-')
+        run: 
+          brew install llvm
+          cd example 
+          SBT_VCPKG_VERSION=$(cat version) example/run
+
+
 
   windows_build:
     name: Windows CI
