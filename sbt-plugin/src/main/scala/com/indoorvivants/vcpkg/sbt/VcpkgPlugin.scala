@@ -21,12 +21,17 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgBootstrap =
       settingKey[Boolean]("whether to bootstrap vcpkg automatically")
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
-    val vcpkgInstall = taskKey[Vector[Vcpkg.FilesInfo]]("Invoke Vcpkg and attempt to install packages")
-    val vcpkgLinkingArguments = taskKey[Vector[String]]("")
-    val vcpkgCompilationArguments = taskKey[Vector[String]]("")
+    val vcpkgInstall = taskKey[Map[Vcpkg.Dependency, Vcpkg.FilesInfo]](
+      "Invoke Vcpkg and attempt to install packages"
+    )
     val vcpkgManager = taskKey[Vcpkg]("")
-    val vcpkgConfigurator = taskKey[vcpkg.PkgConfig]("")
-    val vcpkgBaseDir = taskKey[File]("")
+    val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator]("")
+    val vcpkgBaseDirectory = taskKey[File](
+      "Base folder where sbt-vcpkg will store information: \n " +
+        "- microsoft/vcpkg Github repository will be cloned into `vcpkg` subfolder" +
+        "- packages will be directed to be instealled in the `vcpkg-install` subfolder" +
+        "This folder as a whole is a good candidate for CI caching"
+    )
   }
 
   import autoImport._
@@ -34,29 +39,30 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
   override lazy val projectSettings = Seq(
     vcpkgBootstrap := true,
     vcpkgDependencies := Set.empty,
-    vcpkgBaseDir := vcpkgDefaultBaseDir,
+    vcpkgBaseDirectory := vcpkgDefaultBaseDir,
     vcpkgManager := {
       val binary = vcpkgBinary.value
-      val installation = vcpkgBaseDir.value / "vcpkg-install"
-      val logger = sLog.value
-      val errorLogger = (s: String) => logger.error(s)
-      val debugLogger = (s: String) => logger.debug(s)
+      val installation = vcpkgBaseDirectory.value / "vcpkg-install"
 
       VcpkgBootstrap.manager(
         binary,
         installation,
-        errorLogger = errorLogger,
-        debugLogger = debugLogger
+        logger = sbtLogger(sLog.value)
       )
     },
     vcpkgConfigurator := {
-      val _ = vcpkgInstall.value
+      val files = vcpkgInstall.value
+      val manager = vcpkgManager.value
 
-      vcpkgManager.value.pkgConfig
+      new vcpkg.VcpkgConfigurator(
+        manager.config,
+        files,
+        logger = sbtLogger(sLog.value)
+      )
     },
     vcpkgBinary := {
       vcpkgBinaryImpl(
-        targetFolder = vcpkgBaseDir.value,
+        targetFolder = vcpkgBaseDirectory.value,
         logInfo = sLog.value.info(_),
         logError = sLog.value.error(_)
       )
@@ -65,18 +71,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       vcpkgInstallImpl(
         dependencies = vcpkgDependencies.value,
         manager = vcpkgManager.value,
-        logInfo = sLog.value.info(_)
-      ).toVector
-    },
-    vcpkgLinkingArguments := {
-      vcpkgLinkingArgumentsImpl(
-        info = vcpkgInstall.value,
-        logWarn = sLog.value.error(_)
-      )
-    },
-    vcpkgCompilationArguments := {
-      vcpkgCompilationArgumentsImpl(
-        info = vcpkgInstall.value
+        logger = sbtLogger(sLog.value)
       )
     }
   )
@@ -84,4 +79,13 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
   override lazy val buildSettings = Seq()
 
   override lazy val globalSettings = Seq()
+
+  private def sbtLogger(logger: sbt.Logger): vcpkg.ExternalLogger = {
+    vcpkg.ExternalLogger(
+      debug = logger.debug(_),
+      info = logger.info(_),
+      warn = logger.warn(_),
+      error = logger.error(_)
+    )
+  }
 }

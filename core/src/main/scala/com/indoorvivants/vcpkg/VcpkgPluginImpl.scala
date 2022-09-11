@@ -8,6 +8,7 @@ import scala.util.control.NonFatal
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
+import com.indoorvivants.detective.Platform
 
 /** A bunch of build-tool agnostic functions. The trait can be mixed in SBT's or
   * Mill's native plugin constructs, which can then delegate to these functions,
@@ -74,8 +75,8 @@ trait VcpkgPluginImpl {
   protected def vcpkgInstallImpl(
       dependencies: Set[String],
       manager: Vcpkg,
-      logInfo: String => Unit
-  ): Vector[Vcpkg.FilesInfo] = {
+      logger: ExternalLogger
+  ): Map[Vcpkg.Dependency, Vcpkg.FilesInfo] = {
     val deps = dependencies.map(Vcpkg.Dependency.parse)
 
     val allActualDependencies = deps
@@ -97,42 +98,27 @@ trait VcpkgPluginImpl {
       }
       .filterNot(_.name.startsWith("vcpkg-"))
 
-    allActualDependencies.map { dep =>
-      logInfo(s"Installing ${dep.name}")
-      VcpkgPluginImpl.synchronized {
-        manager.install(dep.name)
+    allActualDependencies
+      .map { dep =>
+        logger.info(s"Installing ${dep.name}")
+        VcpkgPluginImpl.synchronized {
+          manager.install(dep.name)
+        }
+        dep -> files(dep.name, manager.config)
       }
-      manager.files(dep.name)
-    }.toVector
+      .toVector
+      .toMap
   }
 
-  protected def vcpkgLinkingArgumentsImpl(
-      info: Vector[Vcpkg.FilesInfo],
-      logWarn: String => Unit
-  ): Vector[String] = {
-    val arguments = Vector.newBuilder[String]
+  private def files(name: String, config: Vcpkg.Configuration) = {
+    val triplet = config.vcpkgTriplet(Platform.target)
+    val installationName = name + "_" + triplet
+    val location = config.vcpkgRoot / "packages" / installationName
 
-    info.foreach { case f @ Vcpkg.FilesInfo(_, libDir) =>
-      val static = f.staticLibraries
-      val dynamic = f.dynamicLibraries
-
-      if (dynamic.nonEmpty) {
-        arguments += s"-L$libDir"
-        dynamic.foreach { filePath =>
-          val fileName = baseName(filePath)
-
-          if (fileName.startsWith("lib"))
-            arguments += "-l" + fileName.drop(3)
-          else
-            logWarn(
-              s"Malformed dynamic library filename $fileName in $filePath"
-            )
-        }
-      }
-
-      static.foreach(f => arguments += f.toString)
-    }
-    arguments.result()
+    Vcpkg.FilesInfo(
+      includeDir = location / "include",
+      libDir = location / "lib"
+    )
   }
 
   protected def vcpkgBinaryImpl(
@@ -161,25 +147,6 @@ trait VcpkgPluginImpl {
         binary
       }
     }
-  }
-
-  protected def vcpkgCompilationArgumentsImpl(
-      info: Vector[Vcpkg.FilesInfo]
-  ): Vector[String] = {
-    val arguments = Vector.newBuilder[String]
-
-    info.foreach { case f @ Vcpkg.FilesInfo(includeDir, _) =>
-      arguments += s"-I$includeDir"
-    }
-
-    arguments.result()
-  }
-
-  private def baseName(file: java.io.File): String = {
-    val last = file.getName()
-    val li = last.lastIndexOf('.')
-    if (li == -1) last
-    else last.slice(0, li)
   }
 
 }

@@ -8,37 +8,40 @@ scalaVersion := "3.2.0"
 
 import bindgen.interface.Binding
 
-bindgenBindings := Seq(
-  Binding(
-    vcpkgManager.value.includes("cjson") / "cjson" / "cJSON.h",
-    "cjson",
-    cImports = List("cJSON.h")
-  ),
-  Binding(
-    vcpkgManager.value.includes("libuv") / "uv.h",
-    "libuv",
-    cImports = List("uv.h"),
-    clangFlags = List("-I" + vcpkgManager.value.includes("libuv").toString)
-  ),
-  Binding(
-    vcpkgManager.value.includes("czmq") / "czmq.h",
-    "czmq",
-    cImports = List("czmq.h"),
-    clangFlags = List(
-      "-I" + vcpkgManager.value.includes("czmq").toString,
-      "-I" + vcpkgManager.value.includes("zeromq").toString
+bindgenBindings := {
+  val configurator = vcpkgConfigurator.value
+  Seq(
+    Binding(
+      configurator.includes("cjson") / "cjson" / "cJSON.h",
+      "cjson",
+      cImports = List("cJSON.h")
+    ),
+    Binding(
+      configurator.includes("libuv") / "uv.h",
+      "libuv",
+      cImports = List("uv.h"),
+      clangFlags = List("-I" + configurator.includes("libuv").toString)
+    ),
+    Binding(
+      configurator.includes("czmq") / "czmq.h",
+      "czmq",
+      cImports = List("czmq.h"),
+      clangFlags = List(
+        "-I" + configurator.includes("czmq").toString,
+        "-I" + configurator.includes("zeromq").toString
+      )
     )
   )
-)
+}
 
 nativeConfig := {
   import com.indoorvivants.detective.Platform
   val configurator = vcpkgConfigurator.value
-  val manager = vcpkgManager.value
+  val pkgConfig = configurator.pkgConfig
   val conf = nativeConfig.value
   val deps = vcpkgDependencies.value.toSeq
 
-  val files = deps.map(d => manager.files(d))
+  val files = deps.map(d => configurator.files(d))
 
   val compileArgsApprox = files.flatMap { f =>
     List("-I" + f.includeDir.toString)
@@ -51,7 +54,7 @@ nativeConfig := {
 
   def updateLinkingFlags(current: Seq[String], deps: String*) =
     try {
-      configurator.updateLinkingFlags(
+      pkgConfig.updateLinkingFlags(
         current,
         deps *
       )
@@ -62,7 +65,7 @@ nativeConfig := {
 
   def updateCompilationFlags(current: Seq[String], deps: String*) =
     try {
-      configurator.updateCompilationFlags(
+      pkgConfig.updateCompilationFlags(
         current,
         deps *
       )
