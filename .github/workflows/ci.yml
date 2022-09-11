@@ -71,7 +71,7 @@ jobs:
           cache: sbt
       
       - name: Test
-        run: sbt test
+        run: sbt test publishLocal versionDump
 
       # See https://github.com/scala-native/scala-native/blob/master/.github/actions/windows-setup-env/action.yml#L14 
       # for details
@@ -84,7 +84,7 @@ jobs:
       - name: Run example
         shell: pwsh
         run: |
-          choco install llvm --version="$Env:LLVM_VERSION" --allow-downgrade
+          choco install llvm --version="$Env:LLVM_VERSION" --allow-downgrade --no-progress
           clang --version
           $Env:SBT_VCPKG_VERSION=$(cat ../version)
           sbt run
