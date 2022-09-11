@@ -97,3 +97,12 @@ lazy val `mill-plugin` = projectMatrix
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+lazy val versionDump =
+  taskKey[Unit]("Dumps the version in a file named version")
+
+versionDump := {
+  val file = (ThisBuild / baseDirectory).value / "version"
+  IO.write(file, (Compile / version).value)
+}
+
