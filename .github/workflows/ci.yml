@@ -37,7 +37,8 @@ jobs:
 
       - name: Run example
         if: startsWith(matrix.os, 'macos-')
-        run: 
+        run: |
+          set -e
           brew install llvm
           cd example 
           SBT_VCPKG_VERSION=$(cat version) example/run
