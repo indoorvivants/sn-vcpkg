@@ -86,6 +86,7 @@ jobs:
         run: |
           choco install llvm --version="$Env:LLVM_VERSION" --allow-downgrade --no-progress
           clang --version
+          cd example
           $Env:SBT_VCPKG_VERSION=$(cat ../version)
           sbt run
 
