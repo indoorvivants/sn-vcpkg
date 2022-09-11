@@ -43,7 +43,7 @@ jobs:
           set -e
           brew install llvm
           cd example 
-          SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
+          SBT_VCPKG_VERSION=$(cat ../version) sbt run
 
 
 
@@ -52,6 +52,9 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: windows-2019
+    env:
+      LLVM_BIN: C:\Program Files\LLVM\bin
+      LLVM_VERSION: "13.0.1"
     steps:
       - uses: actions/checkout@v3
 
@@ -60,13 +63,6 @@ jobs:
 
       - name: Install pkg-config on Windows
         run: choco install pkgconfiglite
-      
-      # - name: Configure Pagefile
-      #   uses: al-cheb/configure-pagefile-action@v1.2
-      #   with:
-      #     minimum-size: 4GB
-      #     maximum-size: 16GB
-      #   if: runner.os == 'Windows'
       
       - uses: actions/checkout@v3
 
@@ -79,9 +75,23 @@ jobs:
       - name: Test
         run: sbt test
 
-      - name: Cold start tests (docker)
-        run: docker build . -t sbt-vcpkg-tests
-        if: matrix.os == 'ubuntu-20.04'
+      # See https://github.com/scala-native/scala-native/blob/master/.github/actions/windows-setup-env/action.yml#L14 
+      # for details
+      - name: Configure Pagefile
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 4GB
+          maximum-size: 16GB
+
+      - name: Run example
+        shell: pwsh
+        run: |
+          choco install llvm --version="$Env:LLVM_VERSION" --allow-downgrade
+          clang --version
+          $Env:SBT_VCPKG_VERSION=$(cat../version)
+          sbt run
+
+
 
   summary:
     name: Build summary
