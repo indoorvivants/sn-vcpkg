@@ -36,12 +36,14 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu-')
 
       - name: Run example
+        env:
+          LLVM_BIN: /usr/local/opt/llvm/bin  
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
           brew install llvm
           cd example 
-          SBT_VCPKG_VERSION=$(cat version) example/run
+          SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
 
 
