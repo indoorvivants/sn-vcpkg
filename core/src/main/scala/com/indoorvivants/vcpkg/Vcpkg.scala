@@ -27,7 +27,7 @@ class Vcpkg(
   private def cmd(args: String*) =
     Seq(binary.toString) ++ args ++ Seq(localArg)
 
-  private def getLines(args: Seq[String]) = {
+  private def getLines(args: Seq[String]): Vector[String] = {
     import sys.process.Process
     val logs = Vcpkg.logCollector(
       out = Set(Vcpkg.Logs.Buffer, Vcpkg.Logs.Redirect(logger.debug)),
@@ -44,10 +44,10 @@ class Vcpkg(
     }
   }
 
-  def dependencyInfo(name: String) =
+  def dependencyInfo(name: String): Vcpkg.Dependencies =
     Vcpkg.Dependencies.parse(getLines(cmd("depend-info", name)))
 
-  def install(name: String) =
+  def install(name: String): Vector[String] =
     getLines(cmd("install", name, s"--triplet=$vcpkgTriplet", "--recurse"))
 
 }
@@ -103,6 +103,7 @@ object Vcpkg {
 
   case class Dependency(name: String, features: List[String])
   object Dependency {
+    def apply(name: String): Dependency = new Dependency(name, features = Nil)
     def parse(s: String): Dependency =
       if (!s.contains('[')) Dependency(s, Nil)
       else {

@@ -26,7 +26,12 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     )
     val vcpkgManager = taskKey[Vcpkg]("")
     val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator]("")
-    val vcpkgBaseDirectory = taskKey[File]("")
+    val vcpkgBaseDirectory = taskKey[File](
+      "Base folder where sbt-vcpkg will store information: \n " +
+        "- microsoft/vcpkg Github repository will be cloned into `vcpkg` subfolder" +
+        "- packages will be directed to be instealled in the `vcpkg-install` subfolder" +
+        "This folder as a whole is a good candidate for CI caching"
+    )
   }
 
   import autoImport._

@@ -1,6 +1,7 @@
 package com.indoorvivants.vcpkg
 
 import com.indoorvivants.detective.Platform
+import java.io.File
 
 class VcpkgConfigurator(
     config: Vcpkg.Configuration,
@@ -9,12 +10,18 @@ class VcpkgConfigurator(
 ) {
   import config.*
 
-  def files(name: Vcpkg.Dependency) =
+  def dependencyFiles(name: Vcpkg.Dependency) =
     info(name)
 
-  def includes(library: Vcpkg.Dependency) = {
+  def dependencyIncludes(library: Vcpkg.Dependency) = {
     info(library).includeDir
   }
+
+  def files(libraryName: String): Vcpkg.FilesInfo =
+    info(Vcpkg.Dependency(libraryName))
+
+  def includes(libraryName: String): File =
+    info(Vcpkg.Dependency(libraryName)).includeDir
 
   def approximateLinkingArguments = {
     val arguments = Vector.newBuilder[String]
