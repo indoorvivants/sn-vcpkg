@@ -20,6 +20,8 @@ jobs:
         os: [ubuntu-20.04, macos-11]
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v3
+
       - uses: actions/setup-java@v3
         with:
           distribution: 'temurin' 
@@ -40,10 +42,10 @@ jobs:
     name: Windows CI
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2019
     steps:
+      - uses: actions/checkout@v3
+
       - name: Setup git config
         run: git config --global core.autocrlf false
 
