@@ -20,10 +20,25 @@ inThisBuild(
 organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
-lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.16"
-lazy val scala3 = "3.2.0"
-lazy val supportedScalaVersions = List(scala213, scala212, scala3)
+val V = new {
+  val scala213 = "2.13.8"
+
+  val scala212 = "2.12.16"
+
+  val scala3 = "3.2.0"
+
+  val dirs = "26"
+
+  val detective = "0.0.2"
+
+  val eclipseGit = "6.3.0.202209071007-r"
+
+  val mill = "0.10.7"
+
+  val utest = "0.8.1"
+
+  val supportedScalaVersions = List(scala213, scala212, scala3)
+}
 
 lazy val publishing = Seq(
   organization := "com.indoorvivants.vcpkg",
@@ -40,20 +55,20 @@ lazy val root = project
   )
 
 lazy val core = projectMatrix
-  .jvmPlatform(scalaVersions = supportedScalaVersions)
+  .jvmPlatform(scalaVersions = V.supportedScalaVersions)
   .in(file("core"))
   .settings(publishing)
   .settings(
     name := "vcpkg-core",
-    libraryDependencies += "dev.dirs" % "directories" % "26",
-    libraryDependencies += "com.indoorvivants.detective" %% "platform" % "0.0.2",
-    crossScalaVersions := supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.3.0.202209071007-r",
+    libraryDependencies += "dev.dirs" % "directories" % V.dirs,
+    libraryDependencies += "com.indoorvivants.detective" %% "platform" % V.detective,
+    crossScalaVersions := V.supportedScalaVersions,
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % V.eclipseGit,
     scalacOptions += "-Xsource:3"
   )
 
 lazy val `sbt-plugin` = projectMatrix
-  .jvmPlatform(scalaVersions = Seq(scala212))
+  .jvmPlatform(scalaVersions = Seq(V.scala212))
   .in(file("sbt-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -70,14 +85,14 @@ lazy val `sbt-plugin` = projectMatrix
   )
 
 lazy val `mill-plugin` = projectMatrix
-  .jvmPlatform(scalaVersions = Seq(scala213))
+  .jvmPlatform(scalaVersions = Seq(V.scala213))
   .in(file("mill-plugin"))
   .dependsOn(core)
   .settings(publishing)
   .settings(
     name := """mill-vcpkg""",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % "0.10.7",
-    libraryDependencies += "com.lihaoyi" %% "utest" % "0.8.1" % Test,
+    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % V.mill,
+    libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
