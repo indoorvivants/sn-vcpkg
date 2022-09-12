@@ -45,7 +45,7 @@ object VcpkgBootstrap {
     )
     import sys.process._
 
-    val collector = Vcpkg.logCollector()
+    val collector = Logs.logCollector()
 
     val cmd = Seq(script.toString)
 
@@ -65,10 +65,10 @@ object VcpkgBootstrap {
       s"vcpkg executable ($binary) doesn't exist, did you forget to bootstrap it"
     )
 
-    val config = Vcpkg.Configuration(
+    val config = Configuration(
       binary = binary,
       installationDir = installationDir,
-      linking = Vcpkg.Linking.Static
+      linking = Linking.Static
     )
 
     new Vcpkg(config, logger)

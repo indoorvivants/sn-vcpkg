@@ -1,10 +1,10 @@
-package com.indoorvivants.vcpkg.mill
+package com.indoorvivants.vcpkg.millplugin
 
 import utest._
 import mill._
 import mill.util.TestEvaluator
 import mill.util.TestUtil
-import com.indoorvivants.vcpkg.Vcpkg
+import com.indoorvivants.vcpkg._
 
 object VcpkgModuleSpec extends utest.TestSuite {
 
@@ -19,6 +19,7 @@ object VcpkgModuleSpec extends utest.TestSuite {
       val eval = new TestEvaluator(build)
       val Right((result, _)) = eval(build.foo.vcpkgConfigurator)
       assert(result.approximateCompilationArguments.size > 0)
+      assert(result.approximateLinkingArguments.size > 0)
     }
 
     test("pkg-config") {
@@ -45,15 +46,15 @@ object VcpkgModuleSpec extends utest.TestSuite {
 
       assert(
         paths.exists { p =>
-          (p / Vcpkg.FilesInfo.dynamicLibName("cmark")).toIO.exists() ||
-          (p / Vcpkg.FilesInfo.staticLibName("cmark")).toIO.exists() ||
-          (p / Vcpkg.FilesInfo.staticLibName("cmark_static")).toIO.exists()
+          (p / FilesInfo.dynamicLibName("cmark")).toIO.exists() ||
+          (p / FilesInfo.staticLibName("cmark")).toIO.exists() ||
+          (p / FilesInfo.staticLibName("cmark_static")).toIO.exists()
         }
       )
       assert(
         paths.exists { p =>
-          (p / Vcpkg.FilesInfo.dynamicLibName("cjson")).toIO.exists() ||
-          (p / Vcpkg.FilesInfo.staticLibName("cjson")).toIO.exists()
+          (p / FilesInfo.dynamicLibName("cjson")).toIO.exists() ||
+          (p / FilesInfo.staticLibName("cjson")).toIO.exists()
         }
       )
 

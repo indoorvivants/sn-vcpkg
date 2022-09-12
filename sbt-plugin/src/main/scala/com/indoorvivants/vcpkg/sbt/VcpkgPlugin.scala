@@ -1,4 +1,4 @@
-package com.indoorvivants.vcpkg.sbt
+package com.indoorvivants.vcpkg.sbtplugin
 
 import com.indoorvivants.vcpkg
 import com.indoorvivants.detective.Platform.OS._
@@ -21,7 +21,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgBootstrap =
       settingKey[Boolean]("whether to bootstrap vcpkg automatically")
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
-    val vcpkgInstall = taskKey[Map[Vcpkg.Dependency, Vcpkg.FilesInfo]](
+    val vcpkgInstall = taskKey[Map[vcpkg.Dependency, vcpkg.FilesInfo]](
       "Invoke Vcpkg and attempt to install packages"
     )
     val vcpkgManager = taskKey[Vcpkg]("")

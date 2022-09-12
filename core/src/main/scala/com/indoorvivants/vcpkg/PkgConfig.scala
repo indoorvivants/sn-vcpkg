@@ -21,7 +21,7 @@ class PkgConfig(baseDir: File, logger: ExternalLogger) {
 
   private def getLines(args: Seq[String]) = {
     import sys.process.Process
-    val logs = Vcpkg.logCollector()
+    val logs = Logs.logCollector()
     val p = Process
       .apply(args, cwd = None, extraEnv = env.toSeq *)
       .run(logs.logger)

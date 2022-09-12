@@ -3,7 +3,7 @@ scalaVersion := "3.2.0"
 
 enablePlugins(VcpkgPlugin)
 
-import com.indoorvivants.vcpkg.Vcpkg
+import com.indoorvivants.vcpkg
 
 vcpkgDependencies := Set("cmark", "cjson")
 
@@ -28,14 +28,14 @@ testPkgConfig := {
 
   assert(
     paths.exists { p =>
-      (p / Vcpkg.FilesInfo.dynamicLibName("cmark")).exists() ||
-      (p / Vcpkg.FilesInfo.staticLibName("cmark")).exists()
+      (p / vcpkg.FilesInfo.dynamicLibName("cmark")).exists() ||
+      (p / vcpkg.FilesInfo.staticLibName("cmark")).exists()
     }
   )
   assert(
     paths.exists { p =>
-      (p / Vcpkg.FilesInfo.dynamicLibName("cjson")).exists() ||
-      (p / Vcpkg.FilesInfo.staticLibName("cjson")).exists()
+      (p / vcpkg.FilesInfo.dynamicLibName("cjson")).exists() ||
+      (p / vcpkg.FilesInfo.staticLibName("cjson")).exists()
     }
   )
 
