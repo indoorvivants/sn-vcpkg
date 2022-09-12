@@ -1,8 +1,8 @@
-package com.indoorvivants.vcpkg.mill
+package com.indoorvivants.vcpkg.millplugin
 
 import com.indoorvivants.vcpkg.PkgConfig
 import com.indoorvivants.detective.Platform.OS._
-import com.indoorvivants.vcpkg.Vcpkg
+import com.indoorvivants.vcpkg
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import com.indoorvivants.vcpkg.VcpkgPluginImpl
 import mill._
@@ -48,13 +48,13 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     os.Path(ioFile)
   }
 
-  def vcpkgManager: Worker[Vcpkg] = T.worker {
+  def vcpkgManager: Worker[vcpkg.Vcpkg] = T.worker {
     val binary = vcpkgBinary().toIO
     val installation = vcpkgBaseDirectory() / "vcpkg-install"
     VcpkgBootstrap.manager(binary, installation.toIO, millLogger(T.log))
   }
 
-  def vcpkgInstall: T[Map[Vcpkg.Dependency, Vcpkg.FilesInfo]] = T {
+  def vcpkgInstall: T[Map[vcpkg.Dependency, vcpkg.FilesInfo]] = T {
     vcpkgInstallImpl(
       dependencies = vcpkgDependencies(),
       manager = vcpkgManager(),

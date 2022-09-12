@@ -4,29 +4,29 @@ import com.indoorvivants.detective.Platform
 import java.io.File
 
 class VcpkgConfigurator(
-    config: Vcpkg.Configuration,
-    info: Map[Vcpkg.Dependency, Vcpkg.FilesInfo],
+    config: Configuration,
+    info: Map[Dependency, FilesInfo],
     logger: ExternalLogger
 ) {
   import config.*
 
-  def dependencyFiles(name: Vcpkg.Dependency) =
+  def dependencyFiles(name: Dependency) =
     info(name)
 
-  def dependencyIncludes(library: Vcpkg.Dependency) = {
+  def dependencyIncludes(library: Dependency) = {
     info(library).includeDir
   }
 
-  def files(libraryName: String): Vcpkg.FilesInfo =
-    info(Vcpkg.Dependency(libraryName))
+  def files(libraryName: String): FilesInfo =
+    info(Dependency(libraryName))
 
   def includes(libraryName: String): File =
-    info(Vcpkg.Dependency(libraryName)).includeDir
+    info(Dependency(libraryName)).includeDir
 
   def approximateLinkingArguments = {
     val arguments = Vector.newBuilder[String]
 
-    sorted.foreach { case (name, f @ Vcpkg.FilesInfo(_, libDir)) =>
+    sorted.foreach { case (name, f @ FilesInfo(_, libDir)) =>
       val static = f.staticLibraries
       val dynamic = f.dynamicLibraries
 
@@ -52,7 +52,7 @@ class VcpkgConfigurator(
   def approximateCompilationArguments = {
     val arguments = Vector.newBuilder[String]
 
-    sorted.foreach { case (_, f @ Vcpkg.FilesInfo(includeDir, _)) =>
+    sorted.foreach { case (_, f @ FilesInfo(includeDir, _)) =>
       arguments += s"-I$includeDir"
     }
 

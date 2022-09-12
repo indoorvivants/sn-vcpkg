@@ -76,8 +76,8 @@ trait VcpkgPluginImpl {
       dependencies: Set[String],
       manager: Vcpkg,
       logger: ExternalLogger
-  ): Map[Vcpkg.Dependency, Vcpkg.FilesInfo] = {
-    val deps = dependencies.map(Vcpkg.Dependency.parse)
+  ): Map[Dependency, FilesInfo] = {
+    val deps = dependencies.map(Dependency.parse)
 
     val allActualDependencies = deps
       .flatMap { name =>
@@ -98,11 +98,18 @@ trait VcpkgPluginImpl {
       }
       .filterNot(_.name.startsWith("vcpkg-"))
 
+    val allInstalledDependencies =
+      InstalledList.parse(manager.list(), logger).deps.toSet
+
     allActualDependencies
       .map { dep =>
-        logger.info(s"Installing ${dep.name}")
-        VcpkgPluginImpl.synchronized {
-          manager.install(dep.name)
+        if (!allInstalledDependencies(dep)) {
+          logger.info(s"Installing ${dep.name}")
+          VcpkgPluginImpl.synchronized {
+            manager.install(dep.name)
+          }
+        } else {
+          logger.debug(s"${dep.short} is already installed, skipping")
         }
         dep -> files(dep.name, manager.config)
       }
@@ -110,12 +117,12 @@ trait VcpkgPluginImpl {
       .toMap
   }
 
-  private def files(name: String, config: Vcpkg.Configuration) = {
+  private def files(name: String, config: Configuration) = {
     val triplet = config.vcpkgTriplet(Platform.target)
     val installationName = name + "_" + triplet
     val location = config.vcpkgRoot / "packages" / installationName
 
-    Vcpkg.FilesInfo(
+    FilesInfo(
       includeDir = location / "include",
       libDir = location / "lib"
     )
