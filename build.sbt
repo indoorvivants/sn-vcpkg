@@ -21,7 +21,7 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 val V = new {
-  val scala213 = "2.13.8"
+  val scala213 = "2.13.9"
 
   val scala212 = "2.12.16"
 
@@ -105,4 +105,3 @@ versionDump := {
   val file = (ThisBuild / baseDirectory).value / "version"
   IO.write(file, (Compile / version).value)
 }
-
