@@ -16,16 +16,17 @@ class Vcpkg(
 ) {
   import sys.process.*
   import config.*
-  private val localArg = s"--x-install-root=$installationDir"
-  private val root = config.vcpkgRoot
-  private val libDir = installationDir / vcpkgTriplet / "lib"
+  private def localArg = s"--x-install-root=$installationDir"
+  private def rootArg = s"--vcpkg-root=$root"
+  private def root = config.vcpkgRoot
+  private def libDir = installationDir / vcpkgTriplet / "lib"
 
   private val pkgConfigDir = libDir / "pkgconfig"
 
   private lazy val vcpkgTriplet = config.vcpkgTriplet(Platform.target)
 
   private def cmd(args: String*) =
-    Seq(binary.toString) ++ args ++ Seq(localArg)
+    Seq(binary.toString) ++ args ++ Seq(localArg, rootArg)
 
   private def getLines(args: Seq[String]): Vector[String] = {
     import sys.process.Process

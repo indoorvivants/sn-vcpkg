@@ -23,13 +23,14 @@ object Dependencies {
       if (l.toLowerCase.contains("a suitable version of cmake"))
         throw NoSuitableCmake
       else {
-        l.split(": ", 2).toList match {
+        l.split(":", 2).toList match {
           case name :: deps :: Nil =>
             Dependency
-              .parse(name) -> deps
-              .split(", ")
+              .parse(name.trim) -> deps.trim
+              .split(",")
               .toList
-              .filterNot(_.trim.isEmpty)
+              .map(_.trim)
+              .filter(_.nonEmpty)
               .map(Dependency.parse)
           case other => throw UnexpectedDependencyInfo(l)
         }

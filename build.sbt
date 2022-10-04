@@ -37,6 +37,10 @@ val V = new {
 
   val utest = "0.8.1"
 
+  val weaver = "0.8.0"
+
+  val b2s = "0.3.17"
+
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
 
@@ -64,7 +68,11 @@ lazy val core = projectMatrix
     libraryDependencies += "com.indoorvivants.detective" %% "platform" % V.detective,
     crossScalaVersions := V.supportedScalaVersions,
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % V.eclipseGit,
-    scalacOptions += "-Xsource:3"
+    libraryDependencies += "com.disneystreaming" %% "weaver-cats" % V.weaver,
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
+    scalacOptions ++= {
+      if (!scalaVersion.value.startsWith("3.")) Seq("-Xsource:3") else Seq.empty
+    }
   )
 
 lazy val `sbt-plugin` = projectMatrix
@@ -105,4 +113,3 @@ versionDump := {
   val file = (ThisBuild / baseDirectory).value / "version"
   IO.write(file, (Compile / version).value)
 }
-

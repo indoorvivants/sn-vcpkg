@@ -17,6 +17,7 @@ import scala.sys.process
 import com.indoorvivants.vcpkg.ExternalLogger
 import com.indoorvivants.vcpkg.VcpkgConfigurator
 import mill.api.Logger
+import mill.define.Task
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
@@ -26,32 +27,57 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
   /** Whether to bootstrap vcpkg automatically
     */
-  def vcpkgBootstrap: T[Boolean] = true
+  def vcpkgRootInit: Task[vcpkg.VcpkgRootInit] = T.task { defaultRootInit }
 
-  def vcpkgBaseDirectory: T[os.Path] = os.Path(vcpkgDefaultBaseDir)
+  def vcpkgAllowBootstrap: T[Boolean] = T {
+    vcpkgRootInit()
+      .locate(millLogger(T.log))
+      .map(_.allowBootstrap)
+      .getOrElse(false)
+  }
+
+  def vcpkgRoot: T[os.Path] = T {
+    val ioFile = vcpkgRootInit()
+      .locate(millLogger(T.log))
+      .map(_.file)
+      .fold(
+        msg =>
+          throw new RuntimeException(
+            s"Failed to identify a root for Vcpkg: `$msg`"
+          ),
+        identity
+      )
+    os.Path(ioFile)
+  }
+
+  def vcpkgInstallDir: T[os.Path] = {
+    os.Path(defaultInstallDir)
+  }
 
   def vcpkgConfigurator: Worker[VcpkgConfigurator] = T.worker {
-    val files = vcpkgInstall()
-    val manager = vcpkgManager()
-
-    new VcpkgConfigurator(manager.config, files, millLogger(T.log))
+    new VcpkgConfigurator(
+      vcpkgManager().config,
+      vcpkgInstall(),
+      millLogger(T.log)
+    )
   }
 
   /** "Path to vcpkg binary"
     */
   def vcpkgBinary: T[os.Path] = T {
     val ioFile = vcpkgBinaryImpl(
-      targetFolder = vcpkgBaseDirectory().toIO,
-      logInfo = T.log.info(_),
-      logError = T.log.error(_)
+      root = vcpkg.VcpkgRoot(vcpkgRoot().toIO, vcpkgAllowBootstrap()),
+      logger = millLogger(T.log)
     )
     os.Path(ioFile)
   }
 
   def vcpkgManager: Worker[vcpkg.Vcpkg] = T.worker {
-    val binary = vcpkgBinary().toIO
-    val installation = vcpkgBaseDirectory() / "vcpkg-install"
-    VcpkgBootstrap.manager(binary, installation.toIO, millLogger(T.log))
+    VcpkgBootstrap.manager(
+      vcpkgBinary().toIO,
+      vcpkgInstallDir().toIO,
+      millLogger(T.log)
+    )
   }
 
   def vcpkgInstall: T[Map[vcpkg.Dependency, vcpkg.FilesInfo]] = T {
