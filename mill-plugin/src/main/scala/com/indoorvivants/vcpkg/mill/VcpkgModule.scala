@@ -17,6 +17,7 @@ import scala.sys.process
 import com.indoorvivants.vcpkg.ExternalLogger
 import com.indoorvivants.vcpkg.VcpkgConfigurator
 import mill.api.Logger
+import mill.define.Task
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
@@ -26,7 +27,7 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
   /** Whether to bootstrap vcpkg automatically
     */
-  def vcpkgRootInit: Worker[vcpkg.VcpkgRootInit] = T.worker { defaultRootInit }
+  def vcpkgRootInit: Task[vcpkg.VcpkgRootInit] = T.task { defaultRootInit }
 
   def vcpkgAllowBootstrap: T[Boolean] = T {
     vcpkgRootInit()
