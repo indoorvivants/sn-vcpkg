@@ -18,53 +18,61 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
   object autoImport {
     val vcpkgDependencies =
       settingKey[Set[String]]("List of vcpkg dependencies")
-    val vcpkgBootstrap =
-      settingKey[Boolean]("whether to bootstrap vcpkg automatically")
-    val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
     val vcpkgInstall = taskKey[Map[vcpkg.Dependency, vcpkg.FilesInfo]](
       "Invoke Vcpkg and attempt to install packages"
     )
+
+    val vcpkgRootInit = taskKey[vcpkg.VcpkgRootInit]("")
+    val vcpkgRoot = taskKey[File]("Root of vcpkg installation")
+    val vcpkgAllowBootstrap =
+      taskKey[Boolean]("Allow bootstrapping root location")
+
+    val vcpkgInstallDir = taskKey[File]("Where to put installed packages")
+
+    val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
+
     val vcpkgManager = taskKey[Vcpkg]("")
     val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator]("")
-    val vcpkgBaseDirectory = taskKey[File](
-      "Base folder where sbt-vcpkg will store information: \n " +
-        "- microsoft/vcpkg Github repository will be cloned into `vcpkg` subfolder" +
-        "- packages will be directed to be instealled in the `vcpkg-install` subfolder" +
-        "This folder as a whole is a good candidate for CI caching"
-    )
   }
 
   import autoImport._
 
   override lazy val projectSettings = Seq(
-    vcpkgBootstrap := true,
     vcpkgDependencies := Set.empty,
-    vcpkgBaseDirectory := vcpkgDefaultBaseDir,
+    vcpkgRootInit := defaultRootInit,
+    vcpkgInstallDir := defaultInstallDir,
+    vcpkgAllowBootstrap := vcpkgRootInit.value
+      .locate(sbtLogger(sLog.value))
+      .map(_.allowBootstrap)
+      .fold(_ => false, identity),
+    vcpkgRoot := vcpkgRootInit.value
+      .locate(sbtLogger(sLog.value))
+      .map(_.file)
+      .fold(
+        msg =>
+          throw new MessageOnlyException(
+            s"Failed to identify a root for Vcpkg: `$msg`"
+          ),
+        identity
+      ),
     vcpkgManager := {
-      val binary = vcpkgBinary.value
-      val installation = vcpkgBaseDirectory.value / "vcpkg-install"
-
       VcpkgBootstrap.manager(
-        binary,
-        installation,
+        vcpkgBinary.value,
+        vcpkgInstallDir.value,
         logger = sbtLogger(sLog.value)
       )
     },
     vcpkgConfigurator := {
-      val files = vcpkgInstall.value
-      val manager = vcpkgManager.value
-
       new vcpkg.VcpkgConfigurator(
-        manager.config,
-        files,
+        vcpkgManager.value.config,
+        vcpkgInstall.value,
         logger = sbtLogger(sLog.value)
       )
     },
     vcpkgBinary := {
       vcpkgBinaryImpl(
-        targetFolder = vcpkgBaseDirectory.value,
-        logInfo = sLog.value.info(_),
-        logError = sLog.value.error(_)
+        root = vcpkg.VcpkgRoot(vcpkgRoot.value, vcpkgAllowBootstrap.value),
+        logger = sbtLogger(sLog.value)
       )
     },
     vcpkgInstall := {

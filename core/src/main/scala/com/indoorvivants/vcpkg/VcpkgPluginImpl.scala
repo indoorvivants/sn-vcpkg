@@ -16,27 +16,17 @@ import com.indoorvivants.detective.Platform
   */
 trait VcpkgPluginImpl {
 
-  private val dirs = dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
-  private val cacheDir = {
-    def absoluteFile(path: String): File = new File(path).getAbsoluteFile()
-    def windowsCacheDirectory: File = {
-      val base =
-        sys.env
-          .get("LOCALAPPDATA")
-          .map(absoluteFile)
-          .getOrElse(absoluteFile(sys.props("user.home")) / "AppData" / "Local")
-
-      base / "sbt-vcpkg" / "cache"
-    }
-
-    if (dirs.cacheDir.startsWith("null")) windowsCacheDirectory
-    else
-      new File(dirs.cacheDir)
-  }
-
-  protected def vcpkgDefaultBaseDir = cacheDir
-
   import scala.concurrent.duration.*
+
+  protected def defaultRootInit =
+    VcpkgRootInit
+      .FromEnv(allowBootstrap = false)
+      .orElse(VcpkgRootInit.SystemCache(allowBootstrap = true))
+
+  protected def defaultInstallDir =
+    CacheDirDetector
+      .apply()
+      .cacheDir / "vcpkg-install"
 
   private def retryable[A](
       msg: String,
@@ -129,31 +119,33 @@ trait VcpkgPluginImpl {
   }
 
   protected def vcpkgBinaryImpl(
-      targetFolder: File,
-      logInfo: String => Unit,
-      logError: String => Unit
+      root: VcpkgRoot,
+      logger: ExternalLogger
   ): File = {
-    val destination = targetFolder / "vcpkg"
+    val destination = root.file
 
     val binary = destination / VcpkgBootstrap.BINARY_NAME
     val bootstrapScript = destination / VcpkgBootstrap.BOOTSTRAP_SCRIPT
 
-    VcpkgPluginImpl.synchronized {
+    if (root.allowBootstrap) {
 
-      if (binary.exists) binary
-      else if (bootstrapScript.exists) {
-        logInfo("Bootstrapping vcpkg...")
-        VcpkgBootstrap.launchBootstrap(destination, logError)
+      VcpkgPluginImpl.synchronized {
 
-        binary
-      } else {
-        logInfo(s"Cloning microsoft/vcpkg into $destination")
-        VcpkgBootstrap.clone(destination)
-        VcpkgBootstrap.launchBootstrap(destination, logError)
+        if (binary.exists) binary
+        else if (bootstrapScript.exists) {
+          logger.info("Bootstrapping vcpkg...")
+          VcpkgBootstrap.launchBootstrap(destination, logger)
 
-        binary
+          binary
+        } else {
+          logger.info(s"Cloning microsoft/vcpkg into $destination")
+          VcpkgBootstrap.clone(destination)
+          VcpkgBootstrap.launchBootstrap(destination, logger)
+
+          binary
+        }
       }
-    }
+    } else binary
   }
 
 }

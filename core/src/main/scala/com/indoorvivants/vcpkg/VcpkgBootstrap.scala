@@ -37,7 +37,7 @@ object VcpkgBootstrap {
 
   }
 
-  def launchBootstrap(directory: File, errorLogger: String => Unit) = {
+  def launchBootstrap(directory: File, log: ExternalLogger) = {
     val script = directory / BOOTSTRAP_SCRIPT
     assert(
       script.exists(),
@@ -51,7 +51,7 @@ object VcpkgBootstrap {
 
     val result = Process(cmd, cwd = directory).run(collector.logger).exitValue
 
-    if (result != 0) collector.dump(errorLogger)
+    if (result != 0) collector.dump(log.error)
 
   }
 
