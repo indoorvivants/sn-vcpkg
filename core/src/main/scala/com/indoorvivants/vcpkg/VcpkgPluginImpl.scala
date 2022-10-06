@@ -90,7 +90,7 @@ trait VcpkgPluginImpl {
       InstalledList.parse(manager.list(), logger).deps.toSet
 
     val dependenciesToInstall =
-      allInstalledDependencies.filterNot(allInstalledDependencies.contains(_))
+      allActualDependencies.filterNot(allInstalledDependencies.contains(_))
 
     logger.info(
       "Already installed dependencies: " + allInstalledDependencies
