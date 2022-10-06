@@ -19,9 +19,7 @@ trait VcpkgPluginImpl {
   import scala.concurrent.duration.*
 
   protected def defaultRootInit =
-    VcpkgRootInit
-      .FromEnv(allowBootstrap = false)
-      .orElse(VcpkgRootInit.SystemCache(allowBootstrap = true))
+    VcpkgRootInit.SystemCache(allowBootstrap = true)
 
   protected def defaultInstallDir =
     CacheDirDetector
@@ -91,20 +89,39 @@ trait VcpkgPluginImpl {
     val allInstalledDependencies =
       InstalledList.parse(manager.list(), logger).deps.toSet
 
-    allActualDependencies
+    val dependenciesToInstall =
+      allActualDependencies.filterNot(allInstalledDependencies.contains(_))
+
+    logger.info(
+      "Already installed dependencies: " + allInstalledDependencies
+        .map(_.short)
+        .toList
+        .sorted
+        .mkString(" ")
+    )
+
+    if (dependenciesToInstall.nonEmpty) {
+
+      VcpkgPluginImpl.synchronized {
+        logger.info(
+          "Installing: " + dependenciesToInstall
+            .map(_.short)
+            .toList
+            .sorted
+            .mkString(" ")
+        )
+        manager.installAll(dependenciesToInstall.map(_.short).toList)
+      }
+    }
+
+    InstalledList
+      .parse(manager.list(), logger)
+      .deps
       .map { dep =>
-        if (!allInstalledDependencies(dep)) {
-          logger.info(s"Installing ${dep.name}")
-          VcpkgPluginImpl.synchronized {
-            manager.install(dep.name)
-          }
-        } else {
-          logger.debug(s"${dep.short} is already installed, skipping")
-        }
         dep -> files(dep.name, manager.config)
       }
-      .toVector
       .toMap
+
   }
 
   private def files(name: String, config: Configuration) = {
