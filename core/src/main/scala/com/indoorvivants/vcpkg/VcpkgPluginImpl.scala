@@ -86,23 +86,23 @@ trait VcpkgPluginImpl {
       }
       .filterNot(_.name.startsWith("vcpkg-"))
 
-    val allInstalledDependencies =
-      InstalledList.parse(manager.list(), logger).deps.toSet
+    VcpkgPluginImpl.synchronized {
+      val allInstalledDependencies =
+        InstalledList.parse(manager.list(), logger).deps.toSet
 
-    val dependenciesToInstall =
-      allActualDependencies.filterNot(allInstalledDependencies.contains(_))
+      val dependenciesToInstall =
+        allActualDependencies.filterNot(allInstalledDependencies.contains(_))
 
-    logger.info(
-      "Already installed dependencies: " + allInstalledDependencies
-        .map(_.short)
-        .toList
-        .sorted
-        .mkString(" ")
-    )
+      logger.info(
+        "Already installed dependencies: " + allInstalledDependencies
+          .map(_.short)
+          .toList
+          .sorted
+          .mkString(" ")
+      )
 
-    if (dependenciesToInstall.nonEmpty) {
+      if (dependenciesToInstall.nonEmpty) {
 
-      VcpkgPluginImpl.synchronized {
         logger.info(
           "Installing: " + dependenciesToInstall
             .map(_.short)
@@ -112,15 +112,15 @@ trait VcpkgPluginImpl {
         )
         manager.installAll(dependenciesToInstall.map(_.short).toList)
       }
-    }
 
-    InstalledList
-      .parse(manager.list(), logger)
-      .deps
-      .map { dep =>
-        dep -> files(dep.name, manager.config)
-      }
-      .toMap
+      InstalledList
+        .parse(manager.list(), logger)
+        .deps
+        .map { dep =>
+          dep -> files(dep.name, manager.config)
+        }
+        .toMap
+    }
 
   }
 
