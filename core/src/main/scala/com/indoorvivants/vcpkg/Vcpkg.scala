@@ -56,7 +56,11 @@ class Vcpkg(
     getLines(cmd("install", name, s"--triplet=$vcpkgTriplet", "--recurse"))
 
   def installAll(names: Seq[String]): Vector[String] =
-    getLines(cmdSeq(Seq("install") ++ names ++ Seq(s"--triplet=$vcpkgTriplet", "--recurse")))
+    getLines(
+      cmdSeq(
+        Seq("install") ++ names ++ Seq(s"--triplet=$vcpkgTriplet", "--recurse")
+      )
+    )
 
   def list(): Vector[String] =
     getLines(cmd("list", s"--triplet=$vcpkgTriplet"))
