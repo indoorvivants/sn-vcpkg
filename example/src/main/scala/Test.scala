@@ -11,8 +11,7 @@ import libuv.types.*
 
 import scalanative.unsigned.*
 
-@main def hello = 
-
+@main def hello =
   Zone { implicit z =>
     val loop = uv_default_loop()
 
@@ -28,7 +27,7 @@ import scalanative.unsigned.*
 
         val json = cJSON_CreateObject()
         val jsonString = cJSON_CreateString(zuuid_str(uuid))
-        
+
         cJSON_AddItemToObject(json, c"uuid", jsonString)
 
         println(fromCString(cJSON_Print(json)))
