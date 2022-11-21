@@ -9,6 +9,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import com.indoorvivants.detective.Platform
+import java.nio.file.Files
 
 /** A bunch of build-tool agnostic functions. The trait can be mixed in SBT's or
   * Mill's native plugin constructs, which can then delegate to these functions,
@@ -60,6 +61,34 @@ trait VcpkgPluginImpl {
     go(maxAttempts)
   }
 
+  protected def vcpkgInstallManifestImpl(
+      manifest: File,
+      manager: Vcpkg,
+      logger: ExternalLogger
+  ): Map[Dependency, FilesInfo] = {
+    val tempDir = Files.createTempDirectory("vcpkg-manifest-install")
+    val manifestFile =
+      Files.copy(manifest.toPath, tempDir.resolve("vcpkg.json"))
+
+    logger.debug(
+      s"Installing dependencies from manifest file $manifest (using a working directory $tempDir)"
+    )
+
+    VcpkgPluginImpl.synchronized {
+      manager.installManifest(manifestFile.toFile)
+
+      InstalledList.parse(manager.list(), logger).deps.toSet
+
+      InstalledList
+        .parse(manager.list(), logger)
+        .deps
+        .map { dep =>
+          dep -> files(dep.name, manager.config)
+        }
+        .toMap
+    }
+  }
+
   protected def vcpkgInstallImpl(
       dependencies: Set[String],
       manager: Vcpkg,
@@ -93,7 +122,7 @@ trait VcpkgPluginImpl {
       val dependenciesToInstall =
         allActualDependencies.filterNot(allInstalledDependencies.contains(_))
 
-      logger.info(
+      logger.debug(
         "Already installed dependencies: " + allInstalledDependencies
           .map(_.short)
           .toList
@@ -167,4 +196,4 @@ trait VcpkgPluginImpl {
 
 }
 
-object VcpkgPluginImpl
+object VcpkgPluginImpl extends VcpkgPluginImpl

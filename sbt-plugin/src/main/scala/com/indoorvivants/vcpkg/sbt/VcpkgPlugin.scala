@@ -18,6 +18,14 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
   object autoImport {
     val vcpkgDependencies =
       settingKey[Set[String]]("List of vcpkg dependencies")
+
+    val vcpkgManifest =
+      settingKey[File](
+        "Path to the json file to be used as a vcpkg manifest. " +
+          "If vcpkgDependencies is set and is non empty, then dependencies from the manifest" +
+          " are installed first, and then the vcpkgDependencies"
+      )
+
     val vcpkgInstall = taskKey[Map[vcpkg.Dependency, vcpkg.FilesInfo]](
       "Invoke Vcpkg and attempt to install packages"
     )
@@ -32,6 +40,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
 
     val vcpkgManager = taskKey[Vcpkg]("")
+
     val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator]("")
   }
 
@@ -76,10 +85,17 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       )
     },
     vcpkgInstall := {
+      val manager = vcpkgManager.value
+      val logger = sbtLogger(sLog.value)
+
+      vcpkgManifest.?.value.foreach { file =>
+        vcpkgInstallManifestImpl(file, manager, logger)
+      }
+
       vcpkgInstallImpl(
         dependencies = vcpkgDependencies.value,
-        manager = vcpkgManager.value,
-        logger = sbtLogger(sLog.value)
+        manager,
+        logger
       )
     }
   )

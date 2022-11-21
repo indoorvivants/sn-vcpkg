@@ -8,8 +8,14 @@ import com.indoorvivants.vcpkg._
 
 object VcpkgModuleSpec extends utest.TestSuite {
 
+  val manifestPath =
+    sys.env.get("MILL_VCPKG_ROOT").map { p =>
+      os.Path(p) / "vcpkg.json"
+    }
+
   def tests: Tests = Tests {
     test("base") {
+      println(sys.env.get("MILL_VCPKG_ROOT"))
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
           def vcpkgDependencies = T(Set("cmark"))
@@ -25,7 +31,8 @@ object VcpkgModuleSpec extends utest.TestSuite {
     test("pkg-config") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
-          def vcpkgDependencies = T(Set("cmark", "cjson"))
+          override def vcpkgManifest = T(manifestPath)
+          def vcpkgDependencies = T(Set("cmark"))
         }
       }
 

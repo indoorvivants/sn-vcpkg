@@ -41,6 +41,10 @@ val V = new {
 
   val b2s = "0.3.17"
 
+  val decline = "2.4.0"
+
+  val scribe = "3.10.5"
+
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
 
@@ -51,9 +55,10 @@ lazy val publishing = Seq(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(
-    (core.projectRefs ++ `sbt-plugin`.projectRefs ++ `mill-plugin`.projectRefs) *
-  )
+  .aggregate(core.projectRefs *)
+  .aggregate(`sbt-plugin`.projectRefs *)
+  .aggregate(`mill-plugin`.projectRefs *)
+  .aggregate(cli.projectRefs *)
   .settings(
     publish / skip := true
   )
@@ -64,15 +69,29 @@ lazy val core = projectMatrix
   .settings(publishing)
   .settings(
     name := "vcpkg-core",
-    libraryDependencies += "dev.dirs" % "directories" % V.dirs,
-    libraryDependencies += "com.indoorvivants.detective" %% "platform" % V.detective,
-    crossScalaVersions := V.supportedScalaVersions,
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % V.eclipseGit,
-    libraryDependencies += "com.disneystreaming" %% "weaver-cats" % V.weaver,
+    libraryDependencies ++= Seq(
+      "dev.dirs" % "directories" % V.dirs,
+      "com.indoorvivants.detective" %% "platform" % V.detective,
+      "org.eclipse.jgit" % "org.eclipse.jgit" % V.eclipseGit,
+      "com.disneystreaming" %% "weaver-cats" % V.weaver % Test
+    ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions ++= {
       if (!scalaVersion.value.startsWith("3.")) Seq("-Xsource:3") else Seq.empty
     }
+  )
+
+lazy val cli = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(V.scala3))
+  .defaultAxes(VirtualAxis.scalaABIVersion(V.scala3), VirtualAxis.jvm)
+  .dependsOn(core)
+  .in(file("cli"))
+  .settings(publishing)
+  .settings(
+    name := "scala-vcpkg",
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
+    libraryDependencies += "com.monovore" %% "decline" % V.decline,
+    libraryDependencies += "com.outr" %% "scribe" % V.scribe
   )
 
 lazy val `sbt-plugin` = projectMatrix
@@ -101,7 +120,11 @@ lazy val `mill-plugin` = projectMatrix
     name := """mill-vcpkg""",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % V.mill,
     libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
-    testFrameworks += new TestFramework("utest.runner.Framework")
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    Test / fork := true,
+    Test / envVars := Map(
+      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "mill-plugin" / "src" / "test").toString
+    )
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges

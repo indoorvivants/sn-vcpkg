@@ -31,14 +31,14 @@ class Vcpkg(
   private def cmdSeq(args: Seq[String]) =
     Seq(binary.toString) ++ args ++ Seq(localArg, rootArg)
 
-  private def getLines(args: Seq[String]): Vector[String] = {
+  private def getLines(args: Seq[String], cwd: File = root): Vector[String] = {
     import sys.process.Process
     val logs = Logs.logCollector(
       out = Set(Logs.Buffer, Logs.Redirect(logger.debug)),
       err = Set(Logs.Buffer, Logs.Redirect(logger.debug))
     )
     logger.debug(s"Executing ${args.mkString("[", " ", "]")}")
-    val p = Process.apply(args, cwd = root).run(logs.logger).exitValue()
+    val p = Process.apply(args, cwd = cwd).run(logs.logger).exitValue()
 
     if (p != 0) {
       logs.dump(logger.error)
@@ -54,6 +54,12 @@ class Vcpkg(
 
   def install(name: String): Vector[String] =
     getLines(cmd("install", name, s"--triplet=$vcpkgTriplet", "--recurse"))
+
+  def installManifest(file: File): Vector[String] =
+    getLines(
+      cmd("install", s"--triplet=$vcpkgTriplet"),
+      cwd = file.getParentFile()
+    )
 
   def installAll(names: Seq[String]): Vector[String] =
     getLines(
