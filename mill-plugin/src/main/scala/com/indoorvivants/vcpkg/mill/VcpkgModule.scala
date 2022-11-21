@@ -25,6 +25,10 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     */
   def vcpkgDependencies: T[Set[String]]
 
+  /** Path to vcpkg manifest file (i.e. vcpkg.json)
+    */
+  def vcpkgManifest: T[Option[os.Path]] = T { None }
+
   /** Whether to bootstrap vcpkg automatically
     */
   def vcpkgRootInit: Task[vcpkg.VcpkgRootInit] = T.task { defaultRootInit }
@@ -81,10 +85,17 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
   }
 
   def vcpkgInstall: T[Map[vcpkg.Dependency, vcpkg.FilesInfo]] = T {
+    val manager = vcpkgManager()
+    val logger = millLogger(T.log)
+
+    vcpkgManifest().map { path =>
+      vcpkgInstallManifestImpl(path.toIO, manager, logger)
+    }
+
     vcpkgInstallImpl(
       dependencies = vcpkgDependencies(),
-      manager = vcpkgManager(),
-      logger = millLogger(T.log)
+      manager,
+      logger
     )
   }
 
