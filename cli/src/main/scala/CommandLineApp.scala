@@ -72,22 +72,20 @@ object Options extends VcpkgPluginImpl:
     )
     .orFalse
 
-  private val action = Opts
-    .options[String]("install", help = "list of dependencies to install")
-    .map(_.toList)
-    .map(Action.Install(_))
-    .orElse(
-      Opts
-        .option[String](
-          "install-manifest",
-          help =
-            "install dependencies specified by the manifest file (e.g. vcpkg.json)",
-          metavar = "file"
-        )
-        .map(new File(_))
-        .validate("File should exist")(f => f.exists() && f.isFile())
-        .map(Action.InstallManifest(_))
-    )
+  private val actionInstall =
+    Opts
+      .arguments[String](metavar = "dep")
+      .map(_.toList)
+      .map(Action.Install(_))
+
+  private val actionInstallManifest =
+    Opts
+      .argument[String](
+        "vcpkg manifest file"
+      )
+      .map(new File(_))
+      .validate("File should exist")(f => f.exists() && f.isFile())
+      .map(Action.InstallManifest(_))
 
   val logger = ExternalLogger(
     debug = scribe.debug(_),
@@ -99,16 +97,29 @@ object Options extends VcpkgPluginImpl:
   case class Config(
       rootInit: VcpkgRootInit,
       installDir: File,
-      action: Action,
       allowBootstrap: Boolean,
       verbose: Boolean
   )
 
-  val opts = Command(name, header)(
-    (vcpkgRootInit, vcpkgInstallDir, action, vcpkgAllowBootstrap, verbose).mapN(
+  private val configOpts =
+    (vcpkgRootInit, vcpkgInstallDir, vcpkgAllowBootstrap, verbose).mapN(
       Config.apply
     )
+
+  private val install =
+    Opts.subcommand("install", "Install a list of vcpkg dependencies")(
+      (actionInstall, configOpts).tupled
+    )
+
+  private val installManifest = Opts.subcommand(
+    "install-manifest",
+    "Install vcpkg dependencies from a manifest file (like vcpkg.json)"
+  )(
+    (actionInstallManifest, configOpts).tupled
   )
+
+  val opts = Command(name, header)(install orElse installManifest)
+
 end Options
 
 object VcpkgCLI extends VcpkgPluginImpl:
@@ -120,7 +131,7 @@ object VcpkgCLI extends VcpkgPluginImpl:
         System.err.println(help)
         if help.errors.nonEmpty then sys.exit(1)
         else sys.exit(0)
-      case Right(config) =>
+      case Right((action, config)) =>
         import config.*
         if verbose then
           scribe.Logger.root.withMinimumLevel(scribe.Level.Trace).replace()

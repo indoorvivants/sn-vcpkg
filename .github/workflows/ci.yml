@@ -45,7 +45,19 @@ jobs:
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
+      - name: CLI tests
+        shell: bash
+        run: |
+          set -e
+          
+          curl -fLo cs https://github.com/coursier/launchers/raw/master/coursier &&
+          chmod +x cs
+          
+          ./cs launch com.indoorvivants.vcpkg:scala-vcpkg_3:$(cat version) -- install -v libpq s2n
 
+          echo '{"name": "my-application","version": "0.15.2","dependencies": ["sqlite3"]}' > test-vcpkg.json
+          ./cs launch com.indoorvivants.vcpkg:scala-vcpkg_3:$(cat version) -- install-manifest -v test-vcpkg.json
+          
 
   windows_build:
     name: Windows CI
@@ -78,10 +90,6 @@ jobs:
       
       - name: Test
         run: sbt test
-
-      - name: Cold start tests (docker)
-        run: docker build . -t sbt-vcpkg-tests
-        if: matrix.os == 'ubuntu-20.04'
 
   summary:
     name: Build summary
