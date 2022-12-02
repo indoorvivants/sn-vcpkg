@@ -89,7 +89,7 @@ jobs:
           cache: sbt
       
       - name: Test
-        run: sbt test
+        run: sbt scripted
 
   summary:
     name: Build summary
