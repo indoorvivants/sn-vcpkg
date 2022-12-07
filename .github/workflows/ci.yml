@@ -35,6 +35,15 @@ jobs:
         run: docker build . -t sbt-vcpkg-tests
         if: startsWith(matrix.os, 'ubuntu-')
 
+      - name: Cache vcpkg
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/Library/Caches/sbt-vcpkg/vcpkg-install
+            ~/.cache/sbt-vcpkg/vcpkg-install
+            ~/.cache/sbt-vcpkg/vcpkg
+          key: ${{ runner.os }}-sbt-vcpkg
+
       - name: Run example
         env:
           LLVM_BIN: /usr/local/opt/llvm/bin  
