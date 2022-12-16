@@ -41,7 +41,7 @@ val V = new {
 
   val b2s = "0.3.17"
 
-  val decline = "2.4.0"
+  val decline = "2.4.1"
 
   val scribe = "3.10.5"
 
