@@ -5,7 +5,6 @@ enablePlugins(VcpkgPlugin)
 
 import com.indoorvivants.vcpkg
 
-
 vcpkgDependencies := Set("cmark")
 vcpkgManifest := (ThisBuild / baseDirectory).value / "vcpkg.json"
 
