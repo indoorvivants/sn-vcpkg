@@ -31,9 +31,9 @@ val V = new {
 
   val detective = "0.0.2"
 
-  val eclipseGit = "6.3.0.202209071007-r"
+  val eclipseGit = "6.4.0.202211300538-r"
 
-  val mill = "0.10.10"
+  val mill = "0.10.11"
 
   val utest = "0.8.1"
 
@@ -43,7 +43,7 @@ val V = new {
 
   val decline = "2.4.1"
 
-  val scribe = "3.10.5"
+  val scribe = "3.10.6"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
