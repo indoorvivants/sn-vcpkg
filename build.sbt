@@ -25,7 +25,7 @@ val V = new {
 
   val scala212 = "2.12.16"
 
-  val scala3 = "3.2.1"
+  val scala3 = "3.2.2"
 
   val dirs = "26"
 
