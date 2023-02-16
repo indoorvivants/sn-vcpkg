@@ -2,8 +2,11 @@ pull_request_rules:
   - name: automatically merge scala-steward's PRs
     conditions:
       - author=indoorvivants-steward[bot]
-      - body~=labels:.*semver-patch.*
-      - check-success="Build summary"
+      - or:
+        - body~=labels:.*semver-patch.*
+        - body~=labels:.*semver-spec-patch.*
+      - check-success=mergify-build-checkpoint
     actions:
       merge:
         method: merge
+      delete_head_branch:
