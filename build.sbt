@@ -43,7 +43,7 @@ val V = new {
 
   val decline = "2.4.1"
 
-  val scribe = "3.11.0"
+  val scribe = "3.11.1"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
