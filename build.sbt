@@ -141,8 +141,8 @@ lazy val `mill-vcpkg-plugin` = projectMatrix
     libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     Test / fork := true,
-    Test / envVars := Map(
-      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "mill-vcpkg-plugin" / "src" / "test").toString
+    Test / envVars += (
+      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-plugin" / "src" / "test").toString
     )
   )
 
