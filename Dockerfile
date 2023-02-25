@@ -8,7 +8,7 @@ RUN apt update && apt install -y curl && \
     apt install -y lsb-release wget software-properties-common gnupg && \
     ./llvm.sh 14 && \
     apt update && \
-    apt install -y zip unzip tar make cmake autoconf pkg-config libclang-13-dev
+    apt install -y zip unzip tar make cmake autoconf pkg-config 
 
 COPY . /sources
 
