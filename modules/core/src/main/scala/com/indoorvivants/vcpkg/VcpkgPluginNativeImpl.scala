@@ -35,15 +35,15 @@ trait VcpkgPluginNativeImpl {
       val compileArgsApprox =
         List("-I" + files.includeDir.toString)
 
-      val nameOveride = conf.renamedLibraries.get(dep)
+      val nameOverride = conf.renamedLibraries.get(dep)
 
-      val nameDescr = nameOveride.getOrElse(dep) + nameOveride
+      val nameDescr = nameOverride.getOrElse(dep) + nameOverride
         .map(_ => s" (renamed from `$dep`)")
         .getOrElse("")
 
       try {
         result ++= configurator.pkgConfig.compilationFlags(
-          nameOveride.getOrElse(dep)
+          nameOverride.getOrElse(dep)
         )
       } catch {
         case NonFatal(exc) =>
@@ -78,15 +78,15 @@ trait VcpkgPluginNativeImpl {
       val linkingArgsApprox =
         List("-L" + files.libDir) ++ files.staticLibraries.map(_.toString)
 
-      val nameOveride = conf.renamedLibraries.get(dep)
+      val nameOverride = conf.renamedLibraries.get(dep)
 
-      val nameDescr = nameOveride.getOrElse(dep) + nameOveride
+      val nameDescr = nameOverride.getOrElse(dep) + nameOverride
         .map(_ => s" (renamed from `$dep`)")
         .getOrElse("")
 
 
       try {
-        result ++= configurator.pkgConfig.linkingFlags(dep)
+        result ++= configurator.pkgConfig.linkingFlags(nameOverride.getOrElse(dep))
       } catch {
         case NonFatal(exc) =>
           if (conf.approximate) {
