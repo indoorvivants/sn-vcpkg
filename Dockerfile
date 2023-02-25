@@ -6,7 +6,7 @@ RUN apt update && apt install -y curl && \
     curl -Lo llvm.sh https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
     apt install -y lsb-release wget software-properties-common gnupg && \
-    ./llvm.sh 13 && \
+    ./llvm.sh 14 && \
     apt update && \
     apt install -y zip unzip tar make cmake autoconf pkg-config libclang-13-dev
 
@@ -14,8 +14,8 @@ COPY . /sources
 
 RUN apt install -y git
 
-ENV LLVM_BIN "/usr/lib/llvm-13/bin"
-ENV CC "/usr/lib/llvm-13/bin/clang"
+ENV LLVM_BIN "/usr/lib/llvm-14/bin"
+ENV CC "/usr/lib/llvm-14/bin/clang"
 ENV PATH="${PATH}:/root/.local/share/coursier/bin"
 
 ENV SBT_VCPKG_VERSION dev
