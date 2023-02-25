@@ -92,7 +92,7 @@ lazy val cli = projectMatrix
   .in(file("modules/cli"))
   .settings(publishing)
   .settings(
-    name := "scala-vcpkg",
+    name := "sn-vcpkg",
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
     libraryDependencies += "com.outr" %% "scribe" % V.scribe
