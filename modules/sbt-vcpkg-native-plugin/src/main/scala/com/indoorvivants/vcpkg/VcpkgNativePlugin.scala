@@ -19,8 +19,8 @@ import scala.scalanative.sbtplugin.ScalaNativePlugin
 object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
 
   object autoImport {
-    val vcpkgNativeLinkingArgs = taskKey[Seq[String]]("")
-    val vcpkgNativeCompilingArgs = taskKey[Seq[String]]("")
+    val vcpkgNativeLinking = taskKey[Seq[String]]("")
+    val vcpkgNativeCompilation = taskKey[Seq[String]]("")
     val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig]("")
   }
 
@@ -31,13 +31,13 @@ object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
 
   override lazy val projectSettings = Seq(
     vcpkgNativeConfig := vcpkg.VcpkgNativeConfig(),
-    vcpkgNativeLinkingArgs := linkingFlags(
+    vcpkgNativeLinking := linkingFlags(
       VP.vcpkgConfigurator.value,
       VP.vcpkgDependencies.value.toSeq.sorted,
       sbtLogger(sLog.value),
       vcpkgNativeConfig.value
     ),
-    vcpkgNativeCompilingArgs := compilationFlags(
+    vcpkgNativeCompilation := compilationFlags(
       VP.vcpkgConfigurator.value,
       VP.vcpkgDependencies.value.toSeq.sorted,
       sbtLogger(sLog.value),
@@ -51,14 +51,14 @@ object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
             updateLinkingFlags(
               vcpkgNativeConfig.value,
               conf.linkingOptions,
-              vcpkgNativeLinkingArgs.value
+              vcpkgNativeLinking.value
             )
           )
           .withCompileOptions(
             updateCompilationFlags(
               vcpkgNativeConfig.value,
               conf.compileOptions,
-              vcpkgNativeCompilingArgs.value
+              vcpkgNativeCompilation.value
             )
           )
       } else ScalaNativePlugin.autoImport.nativeConfig.value

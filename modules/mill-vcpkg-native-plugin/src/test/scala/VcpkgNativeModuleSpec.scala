@@ -27,7 +27,7 @@ object VcpkgNativeModuleSpec extends utest.TestSuite {
       }
 
       val eval = new TestEvaluator(build)
-      val Right((result, _)) = eval(build.foo.vcpkgNativeLinkingArgs)
+      val Right((result, _)) = eval(build.foo.vcpkgNativeLinking)
 
       println(result)
     }

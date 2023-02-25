@@ -12,7 +12,7 @@ trait VcpkgNativeModule
     with VcpkgModule
     with VcpkgPluginNativeImpl {
 
-  def vcpkgNativeLinkingArgs: T[Seq[String]] = T {
+  def vcpkgNativeLinking: T[Seq[String]] = T {
     linkingFlags(
       configurator = vcpkgConfigurator(),
       deps = vcpkgDependencies().toSeq.sorted,
@@ -21,7 +21,7 @@ trait VcpkgNativeModule
     )
   }
 
-  def vcpkgNativeCompilingArgs: T[Seq[String]] = T {
+  def vcpkgNativeCompilation: T[Seq[String]] = T {
     compilationFlags(
       configurator = vcpkgConfigurator(),
       deps = vcpkgDependencies().toSeq.sorted,
@@ -38,7 +38,7 @@ trait VcpkgNativeModule
     updateCompilationFlags(
       vcpkgNativeConfig(),
       super.nativeCompileOptions().toSeq,
-      vcpkgNativeCompilingArgs()
+      vcpkgNativeCompilation()
     ).toArray
   }
 
@@ -46,7 +46,7 @@ trait VcpkgNativeModule
     updateLinkingFlags(
       vcpkgNativeConfig(),
       super.nativeLinkingOptions().toSeq,
-      vcpkgNativeLinkingArgs()
+      vcpkgNativeLinking()
     ).toArray
 
   }
