@@ -56,8 +56,9 @@ lazy val publishing = Seq(
 lazy val root = project
   .in(file("."))
   .aggregate(core.projectRefs *)
-  .aggregate(`sbt-plugin`.projectRefs *)
-  .aggregate(`mill-plugin`.projectRefs *)
+  .aggregate(`sbt-vcpkg-plugin`.projectRefs *)
+  .aggregate(`sbt-vcpkg-native-plugin`.projectRefs *)
+  .aggregate(`mill-vcpkg-plugin`.projectRefs *)
   .aggregate(cli.projectRefs *)
   .settings(
     publish / skip := true
@@ -111,7 +112,24 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
     scriptedBufferLog := false
   )
 
-lazy val `mill-plugin` = projectMatrix
+lazy val `sbt-vcpkg-native-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .in(file("modules/sbt-vcpkg-native-plugin"))
+  .dependsOn(core, `sbt-vcpkg-plugin`)
+  .enablePlugins(ScriptedPlugin, SbtPlugin)
+  .settings(publishing)
+  .settings(
+    name := """sbt-vcpkg-native""",
+    sbtPlugin := true,
+    // set up 'scripted; sbt plugin for testing sbt plugins
+    scriptedLaunchOpts ++= Seq(
+      "-Xmx1024M",
+      "-Dplugin.version=" + version.value
+    ),
+    addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.10"),
+    scriptedBufferLog := false
+  )
+
 lazy val `mill-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala213))
   .in(file("modules/mill-vcpkg-plugin"))
