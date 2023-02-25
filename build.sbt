@@ -65,7 +65,7 @@ lazy val root = project
 
 lazy val core = projectMatrix
   .jvmPlatform(scalaVersions = V.supportedScalaVersions)
-  .in(file("core"))
+  .in(file("modules/core"))
   .settings(publishing)
   .settings(
     name := "vcpkg-core",
@@ -85,7 +85,7 @@ lazy val cli = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala3))
   .defaultAxes(VirtualAxis.scalaABIVersion(V.scala3), VirtualAxis.jvm)
   .dependsOn(core)
-  .in(file("cli"))
+  .in(file("modules/cli"))
   .settings(publishing)
   .settings(
     name := "scala-vcpkg",
@@ -94,14 +94,14 @@ lazy val cli = projectMatrix
     libraryDependencies += "com.outr" %% "scribe" % V.scribe
   )
 
-lazy val `sbt-plugin` = projectMatrix
+lazy val `sbt-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
-  .in(file("sbt-plugin"))
+  .in(file("modules/sbt-vcpkg-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
   .settings(publishing)
   .settings(
-    name := """sbt-vcpkg""",
+    name := "sbt-vcpkg",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
@@ -112,18 +112,19 @@ lazy val `sbt-plugin` = projectMatrix
   )
 
 lazy val `mill-plugin` = projectMatrix
+lazy val `mill-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala213))
-  .in(file("mill-plugin"))
+  .in(file("modules/mill-vcpkg-plugin"))
   .dependsOn(core)
   .settings(publishing)
   .settings(
-    name := """mill-vcpkg""",
+    name := "mill-vcpkg",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % V.mill,
     libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     Test / fork := true,
     Test / envVars := Map(
-      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "mill-plugin" / "src" / "test").toString
+      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "mill-vcpkg-plugin" / "src" / "test").toString
     )
   )
 

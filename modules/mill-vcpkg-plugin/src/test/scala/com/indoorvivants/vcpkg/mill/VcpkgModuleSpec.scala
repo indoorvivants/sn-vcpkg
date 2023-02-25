@@ -15,7 +15,6 @@ object VcpkgModuleSpec extends utest.TestSuite {
 
   def tests: Tests = Tests {
     test("base") {
-      println(sys.env.get("MILL_VCPKG_ROOT"))
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
           def vcpkgDependencies = T(Set("cmark"))
@@ -37,6 +36,7 @@ object VcpkgModuleSpec extends utest.TestSuite {
       }
 
       val eval = new TestEvaluator(build)
+      println(manifestPath)
       val Right((result, _)) = eval(build.foo.vcpkgConfigurator)
       val pkgConfig = result.pkgConfig
 
