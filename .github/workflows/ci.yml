@@ -46,11 +46,11 @@ jobs:
 
       - name: Run example
         env:
-          LLVM_BIN: /usr/local/opt/llvm/bin  
+          LLVM_BIN: /usr/local/opt/llvm@14/bin  
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm
+          brew install llvm@14
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
