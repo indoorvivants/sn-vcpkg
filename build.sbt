@@ -45,6 +45,8 @@ val V = new {
 
   val scribe = "3.11.1"
 
+  val scalaNative = "0.4.10"
+
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
 
@@ -56,8 +58,10 @@ lazy val publishing = Seq(
 lazy val root = project
   .in(file("."))
   .aggregate(core.projectRefs *)
-  .aggregate(`sbt-plugin`.projectRefs *)
-  .aggregate(`mill-plugin`.projectRefs *)
+  .aggregate(`sbt-vcpkg-plugin`.projectRefs *)
+  .aggregate(`sbt-vcpkg-native-plugin`.projectRefs *)
+  .aggregate(`mill-vcpkg-plugin`.projectRefs *)
+  .aggregate(`mill-vcpkg-native-plugin`.projectRefs *)
   .aggregate(cli.projectRefs *)
   .settings(
     publish / skip := true
@@ -65,7 +69,7 @@ lazy val root = project
 
 lazy val core = projectMatrix
   .jvmPlatform(scalaVersions = V.supportedScalaVersions)
-  .in(file("core"))
+  .in(file("modules/core"))
   .settings(publishing)
   .settings(
     name := "vcpkg-core",
@@ -85,23 +89,23 @@ lazy val cli = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala3))
   .defaultAxes(VirtualAxis.scalaABIVersion(V.scala3), VirtualAxis.jvm)
   .dependsOn(core)
-  .in(file("cli"))
+  .in(file("modules/cli"))
   .settings(publishing)
   .settings(
-    name := "scala-vcpkg",
+    name := "sn-vcpkg",
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
     libraryDependencies += "com.outr" %% "scribe" % V.scribe
   )
 
-lazy val `sbt-plugin` = projectMatrix
+lazy val `sbt-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
-  .in(file("sbt-plugin"))
+  .in(file("modules/sbt-vcpkg-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
   .settings(publishing)
   .settings(
-    name := """sbt-vcpkg""",
+    name := "sbt-vcpkg",
     sbtPlugin := true,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
@@ -111,26 +115,60 @@ lazy val `sbt-plugin` = projectMatrix
     scriptedBufferLog := false
   )
 
-lazy val `mill-plugin` = projectMatrix
+lazy val `sbt-vcpkg-native-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .in(file("modules/sbt-vcpkg-native-plugin"))
+  .dependsOn(core, `sbt-vcpkg-plugin`)
+  .enablePlugins(ScriptedPlugin, SbtPlugin)
+  .settings(publishing)
+  .settings(
+    name := """sbt-vcpkg-native""",
+    sbtPlugin := true,
+    // set up 'scripted; sbt plugin for testing sbt plugins
+    scriptedLaunchOpts ++= Seq(
+      "-Xmx1024M",
+      "-Dplugin.version=" + version.value
+    ),
+    addSbtPlugin("org.scala-native" % "sbt-scala-native" % V.scalaNative),
+    scriptedBufferLog := false
+  )
+
+lazy val `mill-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala213))
-  .in(file("mill-plugin"))
+  .in(file("modules/mill-vcpkg-plugin"))
   .dependsOn(core)
   .settings(publishing)
   .settings(
-    name := """mill-vcpkg""",
+    name := "mill-vcpkg",
     libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % V.mill,
     libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     Test / fork := true,
-    Test / envVars := Map(
-      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "mill-plugin" / "src" / "test").toString
+    Test / envVars += (
+      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-plugin" / "src" / "test").toString
+    )
+  )
+
+lazy val `mill-vcpkg-native-plugin` = projectMatrix
+  .jvmPlatform(scalaVersions = Seq(V.scala213))
+  .in(file("modules/mill-vcpkg-native-plugin"))
+  .dependsOn(core, `mill-vcpkg-plugin` % "test->test;compile->compile")
+  .settings(publishing)
+  .settings(
+    name := "mill-vcpkg",
+    libraryDependencies += "com.lihaoyi" %% "mill-scalanativelib" % V.mill,
+    libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    Test / fork := true,
+    Test / envVars += (
+      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-native-plugin" / "src" / "test").toString
     )
   )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val versionDump =
-  taskKey[Unit]("Dumps the version in a file named version")
+  taskKey[Unit]("Dumps the version in a file named `version`")
 
 versionDump := {
   val file = (ThisBuild / baseDirectory).value / "version"
