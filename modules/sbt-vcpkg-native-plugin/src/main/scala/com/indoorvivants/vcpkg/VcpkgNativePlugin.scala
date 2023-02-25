@@ -21,9 +21,7 @@ object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
   object autoImport {
     val vcpkgNativeLinkingArgs = taskKey[Seq[String]]("")
     val vcpkgNativeCompilingArgs = taskKey[Seq[String]]("")
-    val vcpkgNativeAutoConfigure = settingKey[Boolean]("")
-    val vcpkgNativeApproximate = settingKey[Boolean]("")
-    val vcpkgNativeStaticLinking = settingKey[Boolean]("")
+    val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig]("")
   }
 
   override def requires: Plugins = VcpkgPlugin && ScalaNativePlugin
@@ -32,30 +30,36 @@ object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
   import VcpkgPlugin.{autoImport => VP}
 
   override lazy val projectSettings = Seq(
-    vcpkgNativeAutoConfigure := true,
-    vcpkgNativeApproximate := true,
-    vcpkgNativeStaticLinking := false,
+    vcpkgNativeConfig := vcpkg.VcpkgNativeConfig(),
     vcpkgNativeLinkingArgs := linkingFlags(
       VP.vcpkgConfigurator.value,
       VP.vcpkgDependencies.value.toSeq.sorted,
       sbtLogger(sLog.value),
-      vcpkgNativeApproximate.value
+      vcpkgNativeConfig.value
     ),
     vcpkgNativeCompilingArgs := compilationFlags(
       VP.vcpkgConfigurator.value,
       VP.vcpkgDependencies.value.toSeq.sorted,
       sbtLogger(sLog.value),
-      vcpkgNativeApproximate.value
+      vcpkgNativeConfig.value
     ),
     ScalaNativePlugin.autoImport.nativeConfig := {
-      if (vcpkgNativeAutoConfigure.value) {
+      if (vcpkgNativeConfig.value.autoConfigure) {
         val conf = ScalaNativePlugin.autoImport.nativeConfig.value
         conf
           .withLinkingOptions(
-            vcpkgNativeLinkingArgs.value ++ conf.linkingOptions
+            updateLinkingFlags(
+              vcpkgNativeConfig.value,
+              conf.linkingOptions,
+              vcpkgNativeLinkingArgs.value
+            )
           )
           .withCompileOptions(
-            vcpkgNativeCompilingArgs.value ++ conf.compileOptions
+            updateCompilationFlags(
+              vcpkgNativeConfig.value,
+              conf.compileOptions,
+              vcpkgNativeCompilingArgs.value
+            )
           )
       } else ScalaNativePlugin.autoImport.nativeConfig.value
     }

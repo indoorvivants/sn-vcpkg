@@ -99,7 +99,7 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     )
   }
 
-  private def millLogger(log: Logger) = {
+  protected def millLogger(log: Logger) = {
     new ExternalLogger(
       debug = log.debug(_),
       info = log.info(_),

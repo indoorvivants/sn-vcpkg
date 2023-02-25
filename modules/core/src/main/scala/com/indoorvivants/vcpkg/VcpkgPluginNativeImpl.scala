@@ -3,11 +3,29 @@ package com.indoorvivants.vcpkg
 import scala.util.control.NonFatal
 
 trait VcpkgPluginNativeImpl {
+  protected def updateCompilationFlags(
+      conf: VcpkgNativeConfig,
+      oldFlags: Seq[String],
+      newFlags: Seq[String]
+  ) =
+    if (!conf.autoConfigure) oldFlags
+    else if (conf.prependCompileOptions) newFlags ++ oldFlags
+    else oldFlags ++ newFlags
+
+  protected def updateLinkingFlags(
+      conf: VcpkgNativeConfig,
+      oldFlags: Seq[String],
+      newFlags: Seq[String]
+  ) =
+    if (!conf.autoConfigure) oldFlags
+    else if (conf.prependLinkingOptions) newFlags ++ oldFlags
+    else oldFlags ++ newFlags
+
   protected def compilationFlags(
       configurator: VcpkgConfigurator,
       deps: Seq[String],
       logger: ExternalLogger,
-      approximate: Boolean
+      conf: VcpkgNativeConfig
   ) = {
 
     val result = Seq.newBuilder[String]
@@ -17,13 +35,21 @@ trait VcpkgPluginNativeImpl {
       val compileArgsApprox =
         List("-I" + files.includeDir.toString)
 
+      val nameOveride = conf.renamedLibraries.get(dep)
+
+      val nameDescr = nameOveride.getOrElse(dep) + nameOveride
+        .map(_ => s" (renamed from `$dep`)")
+        .getOrElse("")
+
       try {
-        result ++= configurator.pkgConfig.compilationFlags(dep)
+        result ++= configurator.pkgConfig.compilationFlags(
+          nameOveride.getOrElse(dep)
+        )
       } catch {
         case NonFatal(exc) =>
-          if (approximate) {
+          if (conf.approximate) {
             logger.warn(
-              s"Compilation flags for `$dep` dependency were approximate, and might be incorrect. " +
+              s"Compilation flags for `${nameDescr}` dependency were approximate, and might be incorrect. " +
                 "If you want to disable approximation, set `vcpkgNativeApprxomate := false`"
             )
             result ++= compileArgsApprox
@@ -41,7 +67,7 @@ trait VcpkgPluginNativeImpl {
       configurator: VcpkgConfigurator,
       deps: Seq[String],
       logger: ExternalLogger,
-      approximate: Boolean
+      conf: VcpkgNativeConfig
   ) = {
 
     val result = Seq.newBuilder[String]
@@ -52,19 +78,26 @@ trait VcpkgPluginNativeImpl {
       val linkingArgsApprox =
         List("-L" + files.libDir) ++ files.staticLibraries.map(_.toString)
 
+      val nameOveride = conf.renamedLibraries.get(dep)
+
+      val nameDescr = nameOveride.getOrElse(dep) + nameOveride
+        .map(_ => s" (renamed from `$dep`)")
+        .getOrElse("")
+
+
       try {
         result ++= configurator.pkgConfig.linkingFlags(dep)
       } catch {
         case NonFatal(exc) =>
-          if (approximate) {
+          if (conf.approximate) {
             logger.warn(
-              s"Linking flags for `$dep` dependency were approximated, and might be incorrect. " +
+              s"Linking flags for `$nameDescr` dependency were approximated, and might be incorrect. " +
                 "If you want to disable approximation, set `vcpkgNativeApprxomate := false`"
             )
             result ++= linkingArgsApprox
           } else {
             logger.warn(
-              s"Failed to retrieve linking flags for `$dep`, most likely due to missing pkg-config file"
+              s"Failed to retrieve linking flags for `$nameDescr`, most likely due to missing pkg-config file"
             )
           }
       }
