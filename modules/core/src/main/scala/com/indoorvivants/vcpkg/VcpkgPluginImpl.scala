@@ -10,6 +10,8 @@ import scala.util.Failure
 import scala.util.Success
 import com.indoorvivants.detective.Platform
 import java.nio.file.Files
+import com.indoorvivants.vcpkg.VcpkgDependencies.ManifestFile
+import com.indoorvivants.vcpkg.VcpkgDependencies.Names
 
 /** A bunch of build-tool agnostic functions. The trait can be mixed in SBT's or
   * Mill's native plugin constructs, which can then delegate to these functions,
@@ -61,6 +63,17 @@ trait VcpkgPluginImpl {
     go(maxAttempts)
   }
 
+  protected def vcpkgInstallImpl(
+      manifest: VcpkgDependencies,
+      manager: Vcpkg,
+      logger: ExternalLogger
+  ) =
+    manifest match {
+      case ManifestFile(path) => vcpkgInstallManifestImpl(path, manager, logger)
+      case Names(deps) =>
+        vcpkgInstallDependenciesImpl(deps, manager, logger)
+    }
+
   protected def vcpkgInstallManifestImpl(
       manifest: File,
       manager: Vcpkg,
@@ -89,12 +102,11 @@ trait VcpkgPluginImpl {
     }
   }
 
-  protected def vcpkgInstallImpl(
-      dependencies: Set[String],
+  protected def vcpkgInstallDependenciesImpl(
+      deps: List[Dependency],
       manager: Vcpkg,
       logger: ExternalLogger
   ): Map[Dependency, FilesInfo] = {
-    val deps = dependencies.map(Dependency.parse)
 
     val allActualDependencies = deps
       .flatMap { name =>

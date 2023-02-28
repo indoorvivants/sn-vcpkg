@@ -17,7 +17,7 @@ object VcpkgNativeModuleSpec extends utest.TestSuite {
     test("base") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgNativeModule {
-          def vcpkgDependencies = T(Set("cjson"))
+          def vcpkgDependencies = T(VcpkgDependencies("cjson"))
           def scalaVersion = T("3.2.2")
           def scalaNativeVersion = T("0.4.10")
 
@@ -29,7 +29,6 @@ object VcpkgNativeModuleSpec extends utest.TestSuite {
       val eval = new TestEvaluator(build)
       val Right((result, _)) = eval(build.foo.vcpkgNativeLinking)
 
-      println(result)
     }
   }
 }

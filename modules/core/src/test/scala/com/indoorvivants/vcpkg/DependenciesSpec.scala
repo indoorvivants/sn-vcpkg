@@ -27,7 +27,7 @@ object DependenciesSpec extends weaver.FunSuite {
             Dependency("zlib") -> List(Dependency("vcpkg-cmake")),
             Dependency("vcpkg-cmake") -> Nil,
             Dependency("vcpkg-cmake-config") -> Nil,
-            Dependency("rocksdb", List("zlib")) -> List(
+            Dependency("rocksdb", Set("zlib")) -> List(
               Dependency("vcpkg-cmake"),
               Dependency("vcpkg-cmake-config"),
               Dependency("zlib")

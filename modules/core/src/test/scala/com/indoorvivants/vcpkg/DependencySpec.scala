@@ -6,11 +6,11 @@ object DependencySpec extends weaver.FunSuite {
   test("basic parsing") {
     expect.all(
       parse("openssl") == Dependency("openssl"),
-      parse("openssl[zlib,bla]") == Dependency("openssl", List("zlib", "bla")),
+      parse("openssl[zlib,bla]") == Dependency("openssl", Set("zlib", "bla")),
       parse("openssl[]") == Dependency("openssl"),
       parse("openssl[   zlib,    bla,test]") == Dependency(
         "openssl",
-        List("zlib", "bla", "test")
+        Set("zlib", "bla", "test")
       )
     )
   }
@@ -18,7 +18,7 @@ object DependencySpec extends weaver.FunSuite {
   test("short name") {
     expect.all(
       Dependency("openssl").short == "openssl",
-      Dependency("openssl", List("zlib", "blib")).short == "openssl[zlib,blib]"
+      Dependency("openssl", Set("zlib", "blib")).short == "openssl[blib,zlib]"
     )
   }
 }

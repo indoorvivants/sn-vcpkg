@@ -46,6 +46,8 @@ val V = new {
   val scribe = "3.11.1"
 
   val scalaNative = "0.4.10"
+  
+  val circe = "0.14.4"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
@@ -93,8 +95,10 @@ lazy val cli = projectMatrix
   .settings(publishing)
   .settings(
     name := "sn-vcpkg",
+    run / fork := true,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
+    libraryDependencies += "io.circe" %% "circe-parser" % V.circe,
     libraryDependencies += "com.outr" %% "scribe" % V.scribe
   )
 
@@ -112,6 +116,7 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
     ),
+    test := scripted.toTask("").value,
     scriptedBufferLog := false
   )
 
@@ -124,6 +129,7 @@ lazy val `sbt-vcpkg-native-plugin` = projectMatrix
   .settings(
     name := """sbt-vcpkg-native""",
     sbtPlugin := true,
+    test := scripted.toTask("").value,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",

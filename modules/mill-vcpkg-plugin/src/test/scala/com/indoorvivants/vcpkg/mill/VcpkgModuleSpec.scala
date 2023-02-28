@@ -17,7 +17,7 @@ object VcpkgModuleSpec extends utest.TestSuite {
     test("base") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
-          def vcpkgDependencies = T(Set("cmark"))
+          def vcpkgDependencies = T(VcpkgDependencies("cmark"))
         }
       }
 
@@ -30,14 +30,14 @@ object VcpkgModuleSpec extends utest.TestSuite {
     test("pkg-config") {
       object build extends TestUtil.BaseModule {
         object foo extends VcpkgModule {
-          override def vcpkgManifest = T(manifestPath)
-          def vcpkgDependencies = T(Set("cmark"))
+          def vcpkgDependencies = T(VcpkgDependencies(manifestPath.get.toIO))
         }
       }
 
       val eval = new TestEvaluator(build)
-      println(manifestPath)
       val Right((result, _)) = eval(build.foo.vcpkgConfigurator)
+      val Right((f, _)) = eval(build.foo.vcpkgDependencies)
+      println(f)
       val pkgConfig = result.pkgConfig
 
       val includes =

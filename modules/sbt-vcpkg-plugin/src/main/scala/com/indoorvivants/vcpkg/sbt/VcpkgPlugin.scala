@@ -2,7 +2,7 @@ package com.indoorvivants.vcpkg.sbtplugin
 
 import com.indoorvivants.vcpkg
 import com.indoorvivants.detective.Platform.OS._
-import com.indoorvivants.vcpkg.Vcpkg
+import com.indoorvivants.vcpkg.{Vcpkg}
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import sbt.Keys._
 import sbt._
@@ -17,15 +17,11 @@ import sjsonnew.JsonFormat
 object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
 
   object autoImport {
-    val vcpkgDependencies =
-      settingKey[Set[String]]("List of vcpkg dependencies")
+    type VcpkgDependencies = vcpkg.VcpkgDependencies
+    val VcpkgDependencies = vcpkg.VcpkgDependencies
 
-    val vcpkgManifest =
-      settingKey[File](
-        "Path to the json file to be used as a vcpkg manifest. " +
-          "If vcpkgDependencies is set and is non empty, then dependencies from the manifest" +
-          " are installed first, and then the vcpkgDependencies"
-      )
+    val vcpkgDependencies =
+      settingKey[VcpkgDependencies]("List of vcpkg dependencies")
 
     val vcpkgInstall = taskKey[Map[vcpkg.Dependency, vcpkg.FilesInfo]](
       "Invoke Vcpkg and attempt to install packages"
@@ -62,7 +58,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     )
 
   override lazy val projectSettings = Seq(
-    vcpkgDependencies := Set.empty,
+    vcpkgDependencies := VcpkgDependencies(),
     vcpkgRootInit := defaultRootInit,
     vcpkgInstallDir := defaultInstallDir,
     vcpkgAllowBootstrap := vcpkgRootInit.value
@@ -103,15 +99,17 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       val manager = vcpkgManager.value
       val logger = sbtLogger(sLog.value)
       val cacheFactory = streams.value.cacheStoreFactory
-      val dependencies = vcpkgDependencies.value.toList.sorted
+      val dependencies = vcpkgDependencies.value
 
       val cachedInstall = Cache.cached(
         cacheFactory.make("sbt-vcpkg-vcpkg-dependencies-install")
-      )((deps: List[String]) =>
-        vcpkgInstallImpl(dependencies = deps.toSet, manager, logger).toList
+      )((deps: List[vcpkg.Dependency]) =>
+        vcpkgInstallDependenciesImpl(
+          deps,
+          manager,
+          logger
+        ).toList
       )
-
-      val manifestFile = vcpkgManifest.?.value
 
       type ManifestIn = Option[(File, HashFileInfo)]
       type StuffOut = List[(vcpkg.Dependency, vcpkg.FilesInfo)]
@@ -135,11 +133,14 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
             f(min)
         }
 
-      cachedManifestInstall(
-        vcpkgManifest.?.value.map(f => f -> FileInfo.hash(f))
-      )
+      import VcpkgDependencies.*
 
-      cachedInstall(dependencies).toMap
+      dependencies match {
+        case ManifestFile(path) =>
+          cachedManifestInstall(Some(path -> FileInfo.hash(path))).toMap
+        case Names(deps) => cachedInstall(deps.toList).toMap
+      }
+
     }
   )
 
