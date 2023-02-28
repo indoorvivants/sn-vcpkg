@@ -129,7 +129,6 @@ lazy val `sbt-vcpkg-native-plugin` = projectMatrix
   .settings(
     name := """sbt-vcpkg-native""",
     sbtPlugin := true,
-    test := scripted.toTask("").value,
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",
