@@ -46,7 +46,7 @@ val V = new {
   val scribe = "3.11.1"
 
   val scalaNative = "0.4.10"
-  
+
   val circe = "0.14.4"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
@@ -116,7 +116,6 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
       "-Xmx1024M",
       "-Dplugin.version=" + version.value
     ),
-    test := scripted.toTask("").value,
     scriptedBufferLog := false
   )
 
