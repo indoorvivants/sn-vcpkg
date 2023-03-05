@@ -47,7 +47,10 @@ class VcpkgNativeConfig private (
       "staticLinking" -> staticLinking.toString,
       "prependCompileOptions" -> prependCompileOptions.toString,
       "prependLinkingOptions" -> prependLinkingOptions.toString,
-      "renamedLibraries" -> renamedLibraries.toString
+      "renamedLibraries" -> renamedLibraries.toSeq
+        .sortBy(_._1)
+        .map { case (k, v) => s"$k -> $v" }
+        .mkString(", ")
     )
 
   override def toString() =

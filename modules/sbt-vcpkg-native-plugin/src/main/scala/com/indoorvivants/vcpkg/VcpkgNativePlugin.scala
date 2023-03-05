@@ -21,9 +21,13 @@ import sjsonnew.support.scalajson.unsafe.Converter
 object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
 
   object autoImport {
-    val vcpkgNativeLinking = taskKey[Seq[String]]("")
-    val vcpkgNativeCompilation = taskKey[Seq[String]]("")
-    val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig]("")
+    val vcpkgNativeLinking =
+      taskKey[Seq[String]]("Configured linking flags for vcpkg packges")
+    val vcpkgNativeCompilation =
+      taskKey[Seq[String]]("Configured compilation flags for vcpkg packages")
+    val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig](
+      "Configuration object for VcpkgNativePlugin"
+    )
   }
 
   override def requires: Plugins = VcpkgPlugin && ScalaNativePlugin

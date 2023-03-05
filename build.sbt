@@ -69,6 +69,29 @@ lazy val root = project
     publish / skip := true
   )
 
+lazy val docs =
+  project
+    .in(file("_docs"))
+    .enablePlugins(MdocPlugin)
+    .dependsOn(core.jvm(V.scala213))
+    .settings(scalaVersion := V.scala213)
+
+lazy val checkDrift = taskKey[Boolean]("")
+checkDrift := {
+  val readmeIn = (baseDirectory.value / "README.in.md").toString
+  val generated =
+    (docs / Compile / mdoc).toTask(s"").value
+
+  val out = (docs / Compile / mdocOut).value / "README.in.md"
+
+  val actualReadme = (ThisBuild / baseDirectory).value / "README.md"
+
+  val renderedContents = IO.read(out)
+  val actualContents = IO.read(actualReadme)
+
+  renderedContents != actualContents
+}
+
 lazy val core = projectMatrix
   .jvmPlatform(scalaVersions = V.supportedScalaVersions)
   .in(file("modules/core"))

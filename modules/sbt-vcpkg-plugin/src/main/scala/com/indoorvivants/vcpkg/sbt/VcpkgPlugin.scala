@@ -27,7 +27,9 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       "Invoke Vcpkg and attempt to install packages"
     )
 
-    val vcpkgRootInit = taskKey[vcpkg.VcpkgRootInit]("")
+    val vcpkgRootInit = taskKey[vcpkg.VcpkgRootInit](
+      "Specification of the location where vcpkg will be bootstrapped and where the packages will be installed"
+    )
     val vcpkgRoot = taskKey[File]("Root of vcpkg installation")
     val vcpkgAllowBootstrap =
       taskKey[Boolean]("Allow bootstrapping root location")
@@ -36,9 +38,13 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
 
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
 
-    val vcpkgManager = taskKey[Vcpkg]("")
+    val vcpkgManager = taskKey[Vcpkg](
+      "Value of `Vcpkg` type - a thin wrapper around the `vcpkg` CLI, already bootstrapped"
+    )
 
-    val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator]("")
+    val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator](
+      "`VcpkgConfigurator` instance, which provides access to PkgConfig (a thin wrapper over pre-configured pkg-config) and some methods to approximate compilation/linking arguments for installed packages"
+    )
   }
 
   import autoImport._
