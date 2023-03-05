@@ -23,7 +23,7 @@ trait VcpkgPluginNativeImpl {
 
   protected def compilationFlags(
       configurator: VcpkgConfigurator,
-      deps: Seq[String],
+      deps: List[String],
       logger: ExternalLogger,
       conf: VcpkgNativeConfig
   ) = {
@@ -65,7 +65,7 @@ trait VcpkgPluginNativeImpl {
 
   protected def linkingFlags(
       configurator: VcpkgConfigurator,
-      deps: Seq[String],
+      deps: List[String],
       logger: ExternalLogger,
       conf: VcpkgNativeConfig
   ) = {

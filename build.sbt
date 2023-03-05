@@ -47,6 +47,8 @@ val V = new {
 
   val scalaNative = "0.4.10"
 
+  val circe = "0.14.4"
+
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
 
@@ -66,6 +68,63 @@ lazy val root = project
   .settings(
     publish / skip := true
   )
+
+lazy val docs =
+  project
+    .in(file("_docs"))
+    .enablePlugins(MdocPlugin)
+    .dependsOn(core.jvm(V.scala213))
+    .settings(scalaVersion := V.scala213)
+    .settings(
+      mdocVariables := Map("VERSION" -> "0.0.11", "SCALA3_VERSION" -> V.scala3)
+    )
+
+lazy val docsDrifted = taskKey[Boolean]("")
+docsDrifted := {
+  val readmeIn = (baseDirectory.value / "README.in.md").toString
+  val generated =
+    (docs / Compile / mdoc).toTask(s"").value
+
+  val out = (docs / Compile / mdocOut).value / "README.in.md"
+
+  val actualReadme = (ThisBuild / baseDirectory).value / "README.md"
+
+  val renderedContents = IO.read(out)
+  val actualContents = IO.read(actualReadme)
+
+  renderedContents != actualContents
+}
+
+lazy val checkDocs = taskKey[Unit]("")
+checkDocs := {
+
+  val hasDrifted = docsDrifted.value
+
+  if (hasDrifted) {
+    throw new MessageOnlyException(
+      "Docs have drifted! please run `updateDocs` in SBT to rectify"
+    )
+  }
+}
+
+lazy val updateDocs = taskKey[Unit]("")
+updateDocs := {
+
+  val hasDrifted = docsDrifted.value
+
+  if (hasDrifted) {
+    sLog.value.warn("README.md has drifted, overwriting it")
+
+    val out = (docs / Compile / mdocOut).value / "README.in.md"
+
+    val actualReadme = (ThisBuild / baseDirectory).value / "README.md"
+
+    IO.copyFile(out, actualReadme)
+  } else {
+
+    sLog.value.info("README.md is up to date")
+  }
+}
 
 lazy val core = projectMatrix
   .jvmPlatform(scalaVersions = V.supportedScalaVersions)
@@ -93,13 +152,16 @@ lazy val cli = projectMatrix
   .settings(publishing)
   .settings(
     name := "sn-vcpkg",
+    run / fork := true,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
+    libraryDependencies += "io.circe" %% "circe-parser" % V.circe,
     libraryDependencies += "com.outr" %% "scribe" % V.scribe
   )
 
 lazy val `sbt-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(V.scala212))
   .in(file("modules/sbt-vcpkg-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -117,6 +179,7 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
 
 lazy val `sbt-vcpkg-native-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(V.scala212))
   .in(file("modules/sbt-vcpkg-native-plugin"))
   .dependsOn(core, `sbt-vcpkg-plugin`)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -174,3 +237,8 @@ versionDump := {
   val file = (ThisBuild / baseDirectory).value / "version"
   IO.write(file, (Compile / version).value)
 }
+
+addCommandAlias(
+  "pluginTests",
+  "sbt-vcpkg-plugin/scripted;sbt-vcpkg-native-plugin/scripted"
+)

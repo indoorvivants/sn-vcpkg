@@ -71,7 +71,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.11 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:@VERSION@ -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -97,7 +97,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "@VERSION@")
 ```
 
 And in your build.sbt:
@@ -133,7 +133,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:@VERSION@`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -144,7 +144,7 @@ import com.indoorvivants.vcpkg._
 
 import mill._, mill.scalalib._
 object example extends ScalaModule with VcpkgModule {
-  def scalaVersion = "3.2.2"
+  def scalaVersion = "@SCALA3_VERSION@"
   def vcpkgDependencies = T(VcpkgDependencies("cmark", "cjson"))
 }
 ```
@@ -160,7 +160,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "@VERSION@")
 ```
 
 In `build.sbt`:
@@ -190,7 +190,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:@VERSION@`
 ```
 
 And use the `VcpkgNativeModule` mixin:
@@ -218,6 +218,9 @@ object example extends VcpkgNativeModule {
 
 ### Core
 
+```scala mdoc:invisible 
+import com.indoorvivants.vcpkg._
+```
 
 #### VcpkgRootInit
 
@@ -241,28 +244,21 @@ manipulates Scala Native's `NativeConfig` object to add linking and
 compilation arguments from installed vcpkg dependencies.
 
 **Defaults**
-```scala
+```scala mdoc
 VcpkgNativeConfig()
-// res0: VcpkgNativeConfig = Vcpkg NativeConfig: 
-//   | approximate = true
-//   | autoConfigure = true
-//   | prependCompileOptions = true
-//   | prependLinkingOptions = true
-//   | renamedLibraries = 
-//   | staticLinking = false
 ```
 
 **approximate** - whether to approximate compilation/linking flags 
 in case pkg-config file is not shipped with the library
 
-```scala
+```scala mdoc:silent
 VcpkgNativeConfig().withApproximate(true)
 ```
 
 **autoConfigure** - whether to automatically configure Scala Native's `NativeConfig` 
 with flags for all specified vcpkg dependencies
 
-```scala
+```scala mdoc:silent
 VcpkgNativeConfig().withAutoConfigure(true)
 ```
 
@@ -272,39 +268,25 @@ the flags that Scala Native puts.
 It can be useful because Scala Native adds certain system locations to linking flags 
 by default, and these might have non-vcpkg versions of some of your dependencies
 
-```scala
+```scala mdoc:silent
 VcpkgNativeConfig().withPrependCompileOptions(true)
 ```
 
 **prependLinkingOptions** -  whether to **prepend** linking flags derived from vcpkg before 
 the flags that Scala Native puts.
 
-```scala
+```scala mdoc:silent
 VcpkgNativeConfig().withPrependLinkingOptions(true)
 ```
 
 **renamedLibraries** - a mapping between vcpkg package names and the names under which the `pkg-config` files are installed - those can be different for no good reason whatsoever.
 
-```scala
+```scala mdoc
 // Completely overwrite
 VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "libcmark"))
-// res5: VcpkgNativeConfig = Vcpkg NativeConfig: 
-//   | approximate = true
-//   | autoConfigure = true
-//   | prependCompileOptions = true
-//   | prependLinkingOptions = true
-//   | renamedLibraries = cjson -> libcjson, cmark -> libcmark
-//   | staticLinking = false
 
 // Append only
 VcpkgNativeConfig().addRenamedLibrary("cjson", "libcjson")
-// res6: VcpkgNativeConfig = Vcpkg NativeConfig: 
-//   | approximate = true
-//   | autoConfigure = true
-//   | prependCompileOptions = true
-//   | prependLinkingOptions = true
-//   | renamedLibraries = cjson -> libcjson
-//   | staticLinking = false
 ```
 
 #### VcpkgDependencies
@@ -313,33 +295,20 @@ Specification for vcpkg dependencies. Can be either:
 
 - a simple list of dependency names:
 
-```scala
+```scala mdoc
 VcpkgDependencies("cmark", "cjson")
-// res7: VcpkgDependencies = Names(
-//   deps = List(
-//     Dependency(name = "cmark", features = Set()),
-//     Dependency(name = "cjson", features = Set())
-//   )
-// )
 ```
 
 - a path to manifest file:
 
-```scala
+```scala mdoc
 VcpkgDependencies(new java.io.File("./vcpkg.json"))
-// res8: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
 ```
 
 - a list of detailed dependency specs:
 
-```scala
+```scala mdoc
 VcpkgDependencies.Names(List(Dependency("libpq", Set("arm-build")), Dependency.parse("cpprestsdk[boost]")))
-// res9: VcpkgDependencies.Names = Names(
-//   deps = List(
-//     Dependency(name = "libpq", features = Set("arm-build")),
-//     Dependency(name = "cpprestsdk", features = Set("boost"))
-//   )
-// )
 ```
 
 #### VcpkgConfigurator

@@ -1,6 +1,11 @@
 enablePlugins(VcpkgNativePlugin, ScalaNativePlugin, BindgenPlugin)
 
-vcpkgDependencies := Set("libuv", "czmq", "cjson", "zeromq")
+vcpkgDependencies := VcpkgDependencies(
+  "libuv",
+  "czmq",
+  "cjson",
+  "zeromq"
+)
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 

@@ -5,7 +5,7 @@ enablePlugins(VcpkgPlugin)
 
 import com.indoorvivants.vcpkg
 
-vcpkgDependencies := VcpkgDependencies("cmark", "cjson")
+vcpkgDependencies := VcpkgDependencies(file("vcpkg.json"))
 
 val testPkgConfig = taskKey[Unit]("")
 

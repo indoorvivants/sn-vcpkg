@@ -15,13 +15,19 @@ import scala.sys.process
 import sjsonnew.JsonFormat
 import scala.util.control.NonFatal
 import scala.scalanative.sbtplugin.ScalaNativePlugin
+import scala.util.Try
+import sjsonnew.support.scalajson.unsafe.Converter
 
 object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
 
   object autoImport {
-    val vcpkgNativeLinking = taskKey[Seq[String]]("")
-    val vcpkgNativeCompilation = taskKey[Seq[String]]("")
-    val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig]("")
+    val vcpkgNativeLinking =
+      taskKey[Seq[String]]("Configured linking flags for vcpkg packges")
+    val vcpkgNativeCompilation =
+      taskKey[Seq[String]]("Configured compilation flags for vcpkg packages")
+    val vcpkgNativeConfig = settingKey[vcpkg.VcpkgNativeConfig](
+      "Configuration object for VcpkgNativePlugin"
+    )
   }
 
   override def requires: Plugins = VcpkgPlugin && ScalaNativePlugin
@@ -29,17 +35,72 @@ object VcpkgNativePlugin extends AutoPlugin with vcpkg.VcpkgPluginNativeImpl {
   import autoImport._
   import VcpkgPlugin.{autoImport => VP}
 
+  private object manifestReader {
+    import sjsonnew._, BasicJsonProtocol._
+    implicit val depFormat = new JsonFormat[vcpkg.VcpkgManifestDependency] {
+      def write[J](
+          obj: vcpkg.VcpkgManifestDependency,
+          builder: Builder[J]
+      ): Unit = ???
+      def read[J](
+          jsOpt: Option[J],
+          unbuilder: Unbuilder[J]
+      ): vcpkg.VcpkgManifestDependency =
+        jsOpt match {
+          case Some(js) =>
+            unbuilder.beginObject(js)
+            val name = unbuilder.readField[String]("name")
+            val features =
+              Try(unbuilder.readField[List[String]]("features")).getOrElse(Nil)
+            unbuilder.endObject()
+            vcpkg.VcpkgManifestDependency(name, features)
+          case None =>
+            deserializationError("Expected JsObject but found None")
+        }
+    }
+
+    implicit val fileFormat = new JsonReader[vcpkg.VcpkgManifestFile] {
+      def read[J](
+          jsOpt: Option[J],
+          unbuilder: Unbuilder[J]
+      ): vcpkg.VcpkgManifestFile =
+        jsOpt match {
+          case Some(js) =>
+            unbuilder.beginObject(js)
+            val name = unbuilder.readField[String]("name")
+            val features = Try(
+              unbuilder
+                .readField[List[Either[String, vcpkg.VcpkgManifestDependency]]](
+                  "dependencies"
+                )
+            ).getOrElse(Nil)
+            unbuilder.endObject()
+            vcpkg.VcpkgManifestFile(name, features)
+          case None =>
+            deserializationError("Expected JsObject but found None")
+        }
+    }
+
+    def apply(content: String): vcpkg.VcpkgManifestFile = {
+      import sjsonnew.support.scalajson.unsafe.Parser.parseUnsafe
+
+      Converter
+        .fromJson[vcpkg.VcpkgManifestFile](parseUnsafe(content))
+        .fold(throw _, identity)
+    }
+  }
+
   override lazy val projectSettings = Seq(
     vcpkgNativeConfig := vcpkg.VcpkgNativeConfig(),
     vcpkgNativeLinking := linkingFlags(
       VP.vcpkgConfigurator.value,
-      VP.vcpkgDependencies.value.toSeq.sorted,
+      VP.vcpkgDependencies.value.dependencies(manifestReader(_)).map(_.short),
       sbtLogger(sLog.value),
       vcpkgNativeConfig.value
     ),
     vcpkgNativeCompilation := compilationFlags(
       VP.vcpkgConfigurator.value,
-      VP.vcpkgDependencies.value.toSeq.sorted,
+      VP.vcpkgDependencies.value.dependencies(manifestReader(_)).map(_.short),
       sbtLogger(sLog.value),
       vcpkgNativeConfig.value
     ),
