@@ -4,20 +4,28 @@
 - [sn-vcpkg](#sn-vcpkg)
   - [Vcpkg and native dependencies 101](#vcpkg-and-native-dependencies-101)
   - [Usage](#usage)
+    - [Examples](#examples)
+    - [Summary](#summary)
     - [SBT plugin](#sbt-plugin)
     - [Mill plugin](#mill-plugin)
     - [Scala Native integration](#scala-native-integration)
+      - [SBT](#sbt)
+      - [Mill](#mill)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
       - [VcpkgDependencies](#vcpkgdependencies)
+      - [VcpkgConfigurator](#vcpkgconfigurator)
+      - [PkgConfig](#pkgconfig)
 <!--toc:end-->
 
-Mill and SBT plugins to work with [vcpkg C/C++ dependency manager](https://vcpkg.io/en/index.html) 
+Utilities and build tools to work with [vcpkg C/C++ dependency manager](https://vcpkg.io/en/index.html) 
 
 If you are in a rant-reading mood, please refer to [motivation](/docs/motivation.md).
 
 **If you want to update this documentation file, don't edit it directly - edit [docs/README.in.md](/docs/README.in.md) and run `sbt updateDocs`. It's annoying, but this document contains compiled snippets of code which I want to prevent from going out of date**
+
+Usage TLDR: most likely you want to take a look at [SBT plugin](#sbt-plugin) or [Mill plugin](#mill-plugin)
 
 ## Vcpkg and native dependencies 101
 
@@ -41,6 +49,14 @@ If you are in a rant-reading mood, please refer to [motivation](/docs/motivation
 
 ## Usage 
 
+### Examples
+
+- [Example in this repo](/example/build.sbt) - used as part of CI, uses libuv, cjson, zeromq and [sn-bindgen]
+- [Roach library](https://github.com/indoorvivants/roach/blob/main/build.sbt#L19-L44) - uses the Scala Native integration, and integrates with [sn-bindgen]
+- [SN Bindgen Examples](https://github.com/indoorvivants/sn-bindgen-examples) - lots of different libraries (lua, openssl, postgres, sqlite, libuv, libgit2, etc.) using Scala Native integration and [sn-bindgen]
+
+### Summary
+
 There are several modules of interest:
 
 1. `core` - contains all the tool-agnostic logic for bootstrapping, invoking, and communicating with `vcpkg`.
@@ -55,7 +71,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:<VERSION> -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:@VERSION@ -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -81,7 +97,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % <version>)
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "@VERSION@")
 ```
 
 And in your build.sbt:
@@ -117,7 +133,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:<VERSION>`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:@VERSION@`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -128,7 +144,7 @@ import com.indoorvivants.vcpkg._
 
 import mill._, mill.scalalib._
 object example extends ScalaModule with VcpkgModule {
-  def scalaVersion = "3.2.2"
+  def scalaVersion = "@SCALA3_VERSION@"
   def vcpkgDependencies = T(VcpkgDependencies("cmark", "cjson"))
 }
 ```
@@ -139,7 +155,65 @@ The Mill tasks are the same as in the SBT plugin
 
 ### Scala Native integration
 
+#### SBT
 
+In `project/plugins.sbt`:
+
+```scala
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "@VERSION@")
+```
+
+In `build.sbt`:
+
+```scala
+enablePlugins(VcpkgNativePlugin, ScalaNativePlugin)
+
+vcpkgDependencies := VcpkgDependencies(
+  "cjson",
+  "cmark",
+)
+
+vcpkgNativeConfig ~= {
+  _.withRenamedLibraries(
+    Map("cjson" -> "libcjson", "cmark" -> "libcmark")
+  )
+}
+```
+
+With that, if you `run` the project, vcpkg dependencies will be automatically installed 
+and the `NativeConfig` will be configured so that compilation and linking will succeed.
+
+For real world usage, see [Examples](#examples).
+
+#### Mill
+
+Add dependency to your `build.sc`:
+
+```scala
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:@VERSION@`
+```
+
+And use the `VcpkgNativeModule` mixin:
+
+```scala 
+import com.indoorvivants.vcpkg.millplugin.native.VcpkgNativeModule
+import com.indoorvivants.vcpkg.millplugin.VcpkgModule
+import com.indoorvivants.vcpkg._
+
+import mill._, mill.scalalib._
+object example extends VcpkgNativeModule {
+  def vcpkgDependencies = T(VcpkgDependencies("cjson", "cmark"))
+  def scalaVersion = T("3.2.2")
+  def scalaNativeVersion = T("0.4.10")
+
+  override def vcpkgNativeConfig =
+    T(super
+        .vcpkgNativeConfig()
+        .addRenamedLibrary("cjson", "libcjson")
+        .addRenamedLibrary("cmark", "libcmark")
+    )
+}
+```
 
 
 ### Core
@@ -246,3 +320,5 @@ While this class has useful methods of its own (see [API docs](https://www.javad
 [API docs](https://www.javadoc.io/doc/com.indoorvivants.vcpkg/vcpkg-core_3/latest/com/indoorvivants/vcpkg/PkgConfig.html)
 
 A thin pre-configured (by the build tool) wrapper around [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) tool.
+
+[sn-bindgen]: https://sn-bindgen.indoorvivants.com

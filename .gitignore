@@ -7,6 +7,8 @@
 .vscode 
 metals.sbt
 
+_docs
+
 target
 project/project
 project/target

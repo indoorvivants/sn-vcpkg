@@ -75,6 +75,9 @@ lazy val docs =
     .enablePlugins(MdocPlugin)
     .dependsOn(core.jvm(V.scala213))
     .settings(scalaVersion := V.scala213)
+    .settings(
+      mdocVariables := Map("VERSION" -> "0.0.11", "SCALA3_VERSION" -> V.scala3)
+    )
 
 lazy val docsDrifted = taskKey[Boolean]("")
 docsDrifted := {
