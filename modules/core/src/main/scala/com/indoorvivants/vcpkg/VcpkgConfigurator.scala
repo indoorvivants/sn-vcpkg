@@ -10,10 +10,10 @@ class VcpkgConfigurator(
 ) {
   import config.*
 
-  def dependencyFiles(name: Dependency) =
+  def dependencyFiles(name: Dependency): FilesInfo =
     info(name)
 
-  def dependencyIncludes(library: Dependency) = {
+  def dependencyIncludes(library: Dependency): File = {
     info(library).includeDir
   }
 
@@ -23,7 +23,7 @@ class VcpkgConfigurator(
   def includes(libraryName: String): File =
     info(Dependency(libraryName)).includeDir
 
-  def approximateLinkingArguments = {
+  def approximateLinkingArguments: Vector[String] = {
     val arguments = Vector.newBuilder[String]
 
     sorted.foreach { case (name, f @ FilesInfo(_, libDir)) =>
@@ -49,7 +49,7 @@ class VcpkgConfigurator(
     arguments.result()
   }
 
-  def approximateCompilationArguments = {
+  def approximateCompilationArguments: Vector[String] = {
     val arguments = Vector.newBuilder[String]
 
     sorted.foreach { case (_, f @ FilesInfo(includeDir, _)) =>
@@ -59,7 +59,7 @@ class VcpkgConfigurator(
     arguments.result()
   }
 
-  def pkgConfig = new PkgConfig(pkgConfigDir, logger)
+  def pkgConfig: PkgConfig = new PkgConfig(pkgConfigDir, logger)
 
   private val sorted = info.toList.sortBy(_._1.name)
   private lazy val vcpkgTriplet = config.vcpkgTriplet(Platform.target)

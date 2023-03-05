@@ -76,8 +76,8 @@ lazy val docs =
     .dependsOn(core.jvm(V.scala213))
     .settings(scalaVersion := V.scala213)
 
-lazy val checkDrift = taskKey[Boolean]("")
-checkDrift := {
+lazy val docsDrifted = taskKey[Boolean]("")
+docsDrifted := {
   val readmeIn = (baseDirectory.value / "README.in.md").toString
   val generated =
     (docs / Compile / mdoc).toTask(s"").value
@@ -90,6 +90,37 @@ checkDrift := {
   val actualContents = IO.read(actualReadme)
 
   renderedContents != actualContents
+}
+
+lazy val checkDocs = taskKey[Unit]("")
+checkDocs := {
+
+  val hasDrifted = docsDrifted.value
+
+  if (hasDrifted) {
+    throw new MessageOnlyException(
+      "Docs have drifted! please run `updateDocs` in SBT to rectify"
+    )
+  }
+}
+
+lazy val updateDocs = taskKey[Unit]("")
+updateDocs := {
+
+  val hasDrifted = docsDrifted.value
+
+  if (hasDrifted) {
+    sLog.value.warn("README.md has drifted, overwriting it")
+
+    val out = (docs / Compile / mdocOut).value / "README.in.md"
+
+    val actualReadme = (ThisBuild / baseDirectory).value / "README.md"
+
+    IO.copyFile(out, actualReadme)
+  } else {
+
+    sLog.value.info("README.md is up to date")
+  }
 }
 
 lazy val core = projectMatrix
