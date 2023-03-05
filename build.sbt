@@ -161,6 +161,7 @@ lazy val cli = projectMatrix
 
 lazy val `sbt-vcpkg-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(V.scala212))
   .in(file("modules/sbt-vcpkg-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -178,6 +179,7 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
 
 lazy val `sbt-vcpkg-native-plugin` = projectMatrix
   .jvmPlatform(scalaVersions = Seq(V.scala212))
+  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(V.scala212))
   .in(file("modules/sbt-vcpkg-native-plugin"))
   .dependsOn(core, `sbt-vcpkg-plugin`)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -235,3 +237,8 @@ versionDump := {
   val file = (ThisBuild / baseDirectory).value / "version"
   IO.write(file, (Compile / version).value)
 }
+
+addCommandAlias(
+  "pluginTests",
+  "sbt-vcpkg-plugin/scripted;sbt-vcpkg-native-plugin/scripted"
+)
