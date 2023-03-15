@@ -25,6 +25,8 @@ class Vcpkg(
 
   private lazy val vcpkgTriplet = config.vcpkgTriplet(Platform.target)
 
+  private lazy val env = config.envVariables(Platform.target)
+
   private def cmd(args: String*) =
     Seq(binary.toString) ++ args ++ Seq(localArg, rootArg)
 
@@ -38,7 +40,8 @@ class Vcpkg(
       err = Set(Logs.Buffer, Logs.Redirect(logger.debug))
     )
     logger.debug(s"Executing ${args.mkString("[", " ", "]")}")
-    val p = Process.apply(args, cwd = cwd).run(logs.logger).exitValue()
+    val p =
+      Process.apply(args, cwd = cwd, env.toSeq *).run(logs.logger).exitValue()
 
     if (p != 0) {
       logs.dump(logger.error)
