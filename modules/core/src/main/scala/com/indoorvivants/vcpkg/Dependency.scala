@@ -2,7 +2,8 @@ package com.indoorvivants.vcpkg
 
 case class Dependency(name: String, features: Set[String]) {
   val short =
-    s"$name${if (features.nonEmpty) features.toList.sorted.mkString("[", ",", "]") else ""}"
+    s"$name${if (features.nonEmpty) features.toList.sorted.mkString("[", ",", "]")
+      else ""}"
 }
 object Dependency {
   def apply(name: String): Dependency =
