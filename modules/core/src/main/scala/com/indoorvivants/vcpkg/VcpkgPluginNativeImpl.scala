@@ -84,9 +84,10 @@ trait VcpkgPluginNativeImpl {
         .map(_ => s" (renamed from `$dep`)")
         .getOrElse("")
 
-
       try {
-        result ++= configurator.pkgConfig.linkingFlags(nameOverride.getOrElse(dep))
+        result ++= configurator.pkgConfig.linkingFlags(
+          nameOverride.getOrElse(dep)
+        )
       } catch {
         case NonFatal(exc) =>
           if (conf.approximate) {

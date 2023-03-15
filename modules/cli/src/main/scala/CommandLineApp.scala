@@ -8,10 +8,10 @@ import io.circe.Codec
 import io.circe.CodecDerivation
 import io.circe.Decoder
 
-enum Action(val output: OutputOptions):
-  case Install(dependencies: Seq[String], out: OutputOptions)
-      extends Action(out)
-  case InstallManifest(file: File, out: OutputOptions) extends Action(out)
+enum Action:
+  case Bootstrap
+  case Install(dependencies: Seq[String], out: OutputOptions) extends Action
+  case InstallManifest(file: File, out: OutputOptions)        extends Action
 
 case class OutputOptions(compile: Boolean, linking: Boolean)
 
@@ -153,6 +153,11 @@ object Options extends VcpkgPluginImpl:
       (actionInstall, configOpts).tupled
     )
 
+  private val bootstrap =
+    Opts.subcommand("bootstrap", "Bootstrap vcpkg")(
+      configOpts.map(Action.Bootstrap -> _)
+    )
+
   private val installManifest = Opts.subcommand(
     "install-manifest",
     "Install vcpkg dependencies from a manifest file (like vcpkg.json)"
@@ -160,7 +165,8 @@ object Options extends VcpkgPluginImpl:
     (actionInstallManifest, configOpts).tupled
   )
 
-  val opts = Command(name, header)(install orElse installManifest)
+  val opts =
+    Command(name, header)(install orElse installManifest orElse bootstrap)
 
 end Options
 
@@ -251,25 +257,35 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
           flags.result().distinct
         end printOutput
 
-        val deps = action match
-          case Action.Install(dependencies, _) =>
-            VcpkgDependencies(dependencies*)
-          case Action.InstallManifest(file, _) => VcpkgDependencies(file)
+        action match
+          case Action.Bootstrap =>
+            defaultRootInit.locate(logger) match
+              case Left(value) => scribe.error(value)
+              case Right(value) =>
+                val bin = vcpkgBinaryImpl(value, logger)
+                scribe.info(s"Vcpkg bootstrapped in $bin")
+          case action: (Action.Install | Action.InstallManifest) =>
+            val (output, deps) = action match
+              case Action.Install(dependencies, out) =>
+                out -> VcpkgDependencies(dependencies*)
+              case Action.InstallManifest(file, out) =>
+                out -> VcpkgDependencies(file)
 
-        val result = vcpkgInstallImpl(deps, manager, logger)
+            val result = vcpkgInstallImpl(deps, manager, logger)
 
-        import io.circe.parser.decode
-        import C.given
+            import io.circe.parser.decode
+            import C.given
 
-        val allDeps =
-          deps.dependencies(str =>
-            decode[VcpkgManifestFile](str).fold(throw _, identity)
-          )
+            val allDeps =
+              deps.dependencies(str =>
+                decode[VcpkgManifestFile](str).fold(throw _, identity)
+              )
 
-        printOutput(
-          action.output,
-          allDeps,
-          result.filter((k, v) => allDeps.contains(k))
-        ).foreach(println)
+            printOutput(
+              output,
+              allDeps,
+              result.filter((k, v) => allDeps.contains(k))
+            ).foreach(println)
+        end match
 
 end VcpkgCLI
