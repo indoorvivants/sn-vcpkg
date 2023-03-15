@@ -9,6 +9,12 @@ case class Configuration(
     linking: Linking
 ) {
   def vcpkgRoot: File = binary.getParentFile()
+
+  def envVariables(target: Platform.Target): Map[String, String] =
+    if (Platform.arch == Platform.Arch.Arm)
+      Map("VCPKG_FORCE_SYSTEM_BINARIES" -> "true")
+    else Map.empty
+
   def vcpkgTriplet(target: Platform.Target): String = {
     import Platform.Arch.*
     import Platform.OS.*
