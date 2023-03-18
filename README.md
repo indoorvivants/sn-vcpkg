@@ -11,6 +11,10 @@
     - [Scala Native integration](#scala-native-integration)
       - [SBT](#sbt)
       - [Mill](#mill)
+    - [CLI](#cli)
+      - [`bootstrap`](#bootstrap)
+      - [`install`](#install)
+      - [`install-manifest`](#install-manifest)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -215,6 +219,118 @@ object example extends VcpkgNativeModule {
 }
 ```
 
+### CLI
+
+This is a very thin interface to the [Core](#core) module, designed 
+mostly for demonstration purposes or to install dependencies in CI/containers,
+without launching the SBT/Mill project.
+
+Installation with Coursier:
+
+```bash
+$ cs install sn-vcpkg --channel https://cs.indoorvivants.com/i.json
+```
+
+Usage example:
+
+```bash
+$ sn-vcpkg install libgit2 -l -c
+```
+
+This will install `libgit2` package, and output linking flags (`-l`) and compilation flags (`-c`), one per line.
+
+
+#### `bootstrap`
+
+Only bootstrap vcpkg if necessary, without installing anything
+
+```
+Usage: sn-vcpkg bootstrap [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet]
+
+Bootstrap vcpkg
+
+Options and flags:
+    --help
+        Display this help text.
+    --vcpkg-root-manual <location>
+        Initialise vcpkg in this location
+    --no-bootstrap
+        Allow bootstrapping vcpkg from scratch
+    --vcpkg-root-env <env-var>
+        Pick up vcpkg root from the environment variable
+    --vcpkg-install <dir>
+        folder where packages will be installed
+    --verbose, -v
+        Verbose logging
+    --quiet, -q
+        Only error logging
+```
+
+#### `install`
+
+Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+
+Example: `sn-vcpkg install libgit2 cjson -l -c`
+
+```
+Usage: sn-vcpkg install [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <dep>...
+
+Install a list of vcpkg dependencies
+
+Options and flags:
+    --help
+        Display this help text.
+    --output-compilation, -c
+        Output (to STDOUT) compilation flags for installed libraries, one per line
+    --output-linking, -l
+        Output (to STDOUT) linking flags for installed libraries, one per line
+    --vcpkg-root-manual <location>
+        Initialise vcpkg in this location
+    --no-bootstrap
+        Allow bootstrapping vcpkg from scratch
+    --vcpkg-root-env <env-var>
+        Pick up vcpkg root from the environment variable
+    --vcpkg-install <dir>
+        folder where packages will be installed
+    --verbose, -v
+        Verbose logging
+    --quiet, -q
+        Only error logging
+```
+
+#### `install-manifest`
+
+Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
+
+Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
+
+```
+Usage: sn-vcpkg install-manifest [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <vcpkg manifest file>
+
+Install vcpkg dependencies from a manifest file (like vcpkg.json)
+
+Options and flags:
+    --help
+        Display this help text.
+    --output-compilation, -c
+        Output (to STDOUT) compilation flags for installed libraries, one per line
+    --output-linking, -l
+        Output (to STDOUT) linking flags for installed libraries, one per line
+    --vcpkg-root-manual <location>
+        Initialise vcpkg in this location
+    --no-bootstrap
+        Allow bootstrapping vcpkg from scratch
+    --vcpkg-root-env <env-var>
+        Pick up vcpkg root from the environment variable
+    --vcpkg-install <dir>
+        folder where packages will be installed
+    --verbose, -v
+        Verbose logging
+    --quiet, -q
+        Only error logging
+```
+
+
 
 ### Core
 
@@ -243,7 +359,7 @@ compilation arguments from installed vcpkg dependencies.
 **Defaults**
 ```scala
 VcpkgNativeConfig()
-// res0: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res3: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -288,7 +404,7 @@ VcpkgNativeConfig().withPrependLinkingOptions(true)
 ```scala
 // Completely overwrite
 VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "libcmark"))
-// res5: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res8: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -298,7 +414,7 @@ VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "
 
 // Append only
 VcpkgNativeConfig().addRenamedLibrary("cjson", "libcjson")
-// res6: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res9: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -315,7 +431,7 @@ Specification for vcpkg dependencies. Can be either:
 
 ```scala
 VcpkgDependencies("cmark", "cjson")
-// res7: VcpkgDependencies = Names(
+// res10: VcpkgDependencies = Names(
 //   deps = List(
 //     Dependency(name = "cmark", features = Set()),
 //     Dependency(name = "cjson", features = Set())
@@ -327,14 +443,14 @@ VcpkgDependencies("cmark", "cjson")
 
 ```scala
 VcpkgDependencies(new java.io.File("./vcpkg.json"))
-// res8: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
+// res11: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
 ```
 
 - a list of detailed dependency specs:
 
 ```scala
 VcpkgDependencies.Names(List(Dependency("libpq", Set("arm-build")), Dependency.parse("cpprestsdk[boost]")))
-// res9: VcpkgDependencies.Names = Names(
+// res12: Names = Names(
 //   deps = List(
 //     Dependency(name = "libpq", features = Set("arm-build")),
 //     Dependency(name = "cpprestsdk", features = Set("boost"))
