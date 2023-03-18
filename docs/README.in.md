@@ -11,6 +11,10 @@
     - [Scala Native integration](#scala-native-integration)
       - [SBT](#sbt)
       - [Mill](#mill)
+    - [CLI](#cli)
+      - [`bootstrap`](#bootstrap)
+      - [`install`](#install)
+      - [`install-manifest`](#install-manifest)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -214,6 +218,62 @@ object example extends VcpkgNativeModule {
     )
 }
 ```
+
+### CLI
+
+This is a very thin interface to the [Core](#core) module, designed 
+mostly for demonstration purposes or to install dependencies in CI/containers,
+without launching the SBT/Mill project.
+
+Installation with Coursier:
+
+```bash
+$ cs install sn-vcpkg --channel https://cs.indoorvivants.com/i.json
+```
+
+Usage example:
+
+```bash
+$ sn-vcpkg install libgit2 -l -c
+```
+
+This will install `libgit2` package, and output linking flags (`-l`) and compilation flags (`-c`), one per line.
+
+
+#### `bootstrap`
+
+Only bootstrap vcpkg if necessary, without installing anything
+
+```scala mdoc:passthrough 
+val help = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("bootstrap", "--help")).fold(identity, _ => ???)
+
+println(s"```\n$help\n```")
+```
+
+#### `install`
+
+Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+
+Example: `sn-vcpkg install libgit2 cjson -l -c`
+
+```scala mdoc:passthrough 
+val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install", "--help")).fold(identity, _ => ???)
+
+println(s"```\n$helpInstall\n```")
+```
+
+#### `install-manifest`
+
+Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
+
+Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
+
+```scala mdoc:passthrough 
+val helpManifest = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install-manifest", "--help")).fold(identity, _ => ???)
+
+println(s"```\n$helpManifest\n```")
+```
+
 
 
 ### Core

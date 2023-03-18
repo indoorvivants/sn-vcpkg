@@ -73,8 +73,8 @@ lazy val docs =
   project
     .in(file("_docs"))
     .enablePlugins(MdocPlugin)
-    .dependsOn(core.jvm(V.scala213))
-    .settings(scalaVersion := V.scala213)
+    .dependsOn(core.jvm(V.scala3), cli.jvm(V.scala3))
+    .settings(scalaVersion := V.scala3)
     .settings(
       mdocVariables := Map("VERSION" -> "0.0.11", "SCALA3_VERSION" -> V.scala3)
     )
