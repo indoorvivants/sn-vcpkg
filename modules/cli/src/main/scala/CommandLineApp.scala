@@ -205,6 +205,10 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
   import Options.*
 
   def main(args: Array[String]): Unit =
+    scribe.Logger.root
+      .clearHandlers()
+      .withHandler(writer = scribe.writer.SystemErrWriter)
+      .replace()
     opts.parse(args) match
       case Left(help) =>
         val (modified, code) =
@@ -287,5 +291,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               result.filter((k, v) => allDeps.contains(k))
             ).foreach(println)
         end match
+    end match
+  end main
 
 end VcpkgCLI
