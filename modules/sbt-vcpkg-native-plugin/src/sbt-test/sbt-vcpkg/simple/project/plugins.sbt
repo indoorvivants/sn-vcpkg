@@ -5,4 +5,7 @@ if (pluginVersion == null)
     """|The system property 'plugin.version' is not defined.
                                 |Specify this property using the scriptedLaunchOpts -D.""".stripMargin
   )
-else addSbtPlugin("com.indoorvivants.vcpkg" % """sbt-vcpkg-native""" % pluginVersion)
+else
+  addSbtPlugin(
+    "com.indoorvivants.vcpkg" % """sbt-vcpkg-native""" % pluginVersion
+  )
