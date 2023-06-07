@@ -21,7 +21,7 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 val V = new {
-  val scala213 = "2.13.10"
+  val scala213 = "2.13.11"
 
   val scala212 = "2.12.16"
 
