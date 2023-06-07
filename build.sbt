@@ -23,7 +23,7 @@ sonatypeProfileName := "com.indoorvivants"
 val V = new {
   val scala213 = "2.13.11"
 
-  val scala212 = "2.12.16"
+  val scala212 = "2.12.18"
 
   val scala3 = "3.2.2"
 
