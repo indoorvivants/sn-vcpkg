@@ -275,6 +275,63 @@ println(s"```\n$helpManifest\n```")
 ```
 
 
+### `clang` and `clang++`
+
+These commands invoke clang or clang++ with all the configuration 
+flags required [^1] to run the specified dependencies.
+
+For example, say you have a snippet of C code that needs sqlite3 dependency:
+
+```c 
+#include <stdio.h>
+#include <sqlite3.h> 
+
+int main(int argc, char* argv[]) {
+   sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
+
+   rc = sqlite3_open("test.db", &db);
+
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+   sqlite3_close(db);
+}
+```
+
+You can compile it directly by running 
+
+```
+sn-vcpkg clang sqlite3 -- test-sqlite.c
+```
+
+Or if you have a vcpkg manifest file:
+
+```json 
+{
+ "name": "my-application",
+ "version": "0.15.2",
+ "dependencies": ["sqlite3"]
+}
+```
+
+You can use that as well:
+
+```
+sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
+```
+
+All the arguments after `--` will be passed to clang/clang++ without modification (_after_ the flags calculated for dependencies)
+
+
+
+
+
+[^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
 ### Core
 

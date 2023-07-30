@@ -75,7 +75,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.11 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.13 -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -101,7 +101,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.13")
 ```
 
 And in your build.sbt:
@@ -137,7 +137,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.13`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -164,7 +164,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.13")
 ```
 
 In `build.sbt`:
@@ -194,7 +194,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.13`
 ```
 
 And use the `VcpkgNativeModule` mixin:
@@ -273,13 +273,17 @@ Install one or several dependencies, and optionally output linking/compilation f
 Example: `sn-vcpkg install libgit2 cjson -l -c`
 
 ```
-Usage: sn-vcpkg install [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <dep>...
+Usage:
+    sn-vcpkg install --manifest <string> [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet]
+    sn-vcpkg install [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <dep>...
 
 Install a list of vcpkg dependencies
 
 Options and flags:
     --help
         Display this help text.
+    --manifest <string>
+        vcpkg manifest file
     --output-compilation, -c
         Output (to STDOUT) compilation flags for installed libraries, one per line
     --output-linking, -l
@@ -305,32 +309,91 @@ Install dependencies from a manifest file, and optionally output linking/compila
 Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
 
 ```
-Usage: sn-vcpkg install-manifest [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <vcpkg manifest file>
+Unexpected argument: install-manifest
 
-Install vcpkg dependencies from a manifest file (like vcpkg.json)
+Usage:
+    sn-vcpkg install
+    sn-vcpkg bootstrap
+    sn-vcpkg clang
+    sn-vcpkg clang++
+
+Bootstraps and installs vcpkg dependencies in a way compatible with 
+the build tool plugins for SBT or Mill
 
 Options and flags:
     --help
         Display this help text.
-    --output-compilation, -c
-        Output (to STDOUT) compilation flags for installed libraries, one per line
-    --output-linking, -l
-        Output (to STDOUT) linking flags for installed libraries, one per line
-    --vcpkg-root-manual <location>
-        Initialise vcpkg in this location
-    --no-bootstrap
-        Allow bootstrapping vcpkg from scratch
-    --vcpkg-root-env <env-var>
-        Pick up vcpkg root from the environment variable
-    --vcpkg-install <dir>
-        folder where packages will be installed
-    --verbose, -v
-        Verbose logging
-    --quiet, -q
-        Only error logging
+
+Subcommands:
+    install
+        Install a list of vcpkg dependencies
+    bootstrap
+        Bootstrap vcpkg
+    clang
+        Invoke clang with the correct flags for passed dependenciesThe format of the command is [sn-vcpkg clang <flags> <dependencies> -- <clang arguments>
+    clang++
+        Invoke clang++ with the correct flags for passed dependencies. 
+        The format of the command is [sn-vcpkg clang++ <flags> <dependencies> -- <clang arguments>
 ```
 
 
+### `clang` and `clang++`
+
+These commands invoke clang or clang++ with all the configuration 
+flags required [^1] to run the specified dependencies.
+
+For example, say you have a snippet of C code that needs sqlite3 dependency:
+
+```c 
+#include <stdio.h>
+#include <sqlite3.h> 
+
+int main(int argc, char* argv[]) {
+   sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
+
+   rc = sqlite3_open("test.db", &db);
+
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+   sqlite3_close(db);
+}
+```
+
+You can compile it directly by running 
+
+```
+sn-vcpkg clang sqlite3 -- test-sqlite.c
+```
+
+Or if you have a vcpkg manifest file:
+
+```json 
+{
+ "name": "my-application",
+ "version": "0.15.2",
+ "dependencies": ["sqlite3"]
+}
+```
+
+You can use that as well:
+
+```
+sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
+```
+
+All the arguments after `--` will be passed to clang/clang++ without modification (_after_ the flags calculated for dependencies)
+
+
+
+
+
+[^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
 ### Core
 
