@@ -314,11 +314,7 @@ You can use that as well:
 sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 ```
 
-All the arguments after `--` will be passed to clang/clang++ without modification (_after_ the flags calculated for dependencies)
-
-
-
-
+All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
 
 [^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 

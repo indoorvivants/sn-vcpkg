@@ -326,13 +326,14 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               case Compiler.ClangPP => "clang++"
             )
 
+            compilerArgs.addAll(rest)
+
             printOutput(
               OutputOptions(compile = true, linking = true),
               allDeps,
               result.filter((k, v) => allDeps.contains(k))
             ).foreach(compilerArgs.addOne)
 
-            compilerArgs.addAll(rest)
 
             scribe.debug(s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]")
 
