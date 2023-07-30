@@ -71,11 +71,11 @@ jobs:
           echo '{"name": "my-application","version": "0.15.2","dependencies": ["sqlite3"]}' > test-vcpkg.json
           ./local_cli install --manifest test-vcpkg.json
 
-          ./local_cli clang sqlite3 -- .github/workflows/fixutres/test-sqlite.c
-          ./local_cli clang --manifest test-vcpkg.json -- .github/workflows/fixutres/test-sqlite.c
+          ./local_cli clang sqlite3 -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
 
-          ./local_cli clang++ sqlite3 -- .github/workflows/fixutres/test-sqlite.c
-          ./local_cli clang++ --manifest test-vcpkg.json -- .github/workflows/fixutres/test-sqlite.c
+          ./local_cli clang++ sqlite3 -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang++ --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
 
           
 
