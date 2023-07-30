@@ -14,7 +14,7 @@
     - [CLI](#cli)
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
-      - [`install-manifest`](#install-manifest)
+    - [`clang` and `clang++`](#clang-and-clang)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -252,9 +252,11 @@ println(s"```\n$help\n```")
 
 #### `install`
 
-Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+Install one or several dependencies, by name or from a manifest file, and optionally output linking/compilation flags for all of them.
 
-Example: `sn-vcpkg install libgit2 cjson -l -c`
+Examples: 
+- `sn-vcpkg install libgit2 cjson -l -c`
+- `sn-vcpkg install --manifest vcpkg.json -l -c`
 
 ```scala mdoc:passthrough 
 val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install", "--help")).fold(identity, _ => ???)
@@ -262,19 +264,59 @@ val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install"
 println(s"```\n$helpInstall\n```")
 ```
 
-#### `install-manifest`
+#### `clang` and `clang++`
 
-Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
+These commands invoke clang or clang++ with all the configuration 
+flags required [^1] to run the specified dependencies.
 
-Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
+For example, say you have a snippet of C code that needs sqlite3 dependency:
 
-```scala mdoc:passthrough 
-val helpManifest = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install-manifest", "--help")).fold(identity, _ => ???)
+```c 
+#include <stdio.h>
+#include <sqlite3.h> 
 
-println(s"```\n$helpManifest\n```")
+int main(int argc, char* argv[]) {
+   sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
+
+   rc = sqlite3_open("test.db", &db);
+
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+   sqlite3_close(db);
+}
 ```
 
+You can compile it directly by running 
 
+```
+sn-vcpkg clang sqlite3 -- test-sqlite.c
+```
+
+Or if you have a vcpkg manifest file:
+
+```json 
+{
+ "name": "my-application",
+ "version": "0.15.2",
+ "dependencies": ["sqlite3"]
+}
+```
+
+You can use that as well:
+
+```
+sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
+```
+
+All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+[^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
 ### Core
 

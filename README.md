@@ -14,7 +14,7 @@
     - [CLI](#cli)
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
-      - [`install-manifest`](#install-manifest)
+    - [`clang` and `clang++`](#clang-and-clang)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -75,7 +75,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.11 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.13 -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -101,7 +101,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.13")
 ```
 
 And in your build.sbt:
@@ -137,7 +137,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.13`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -164,7 +164,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.11")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.13")
 ```
 
 In `build.sbt`:
@@ -194,7 +194,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.11`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.13`
 ```
 
 And use the `VcpkgNativeModule` mixin:
@@ -268,18 +268,24 @@ Options and flags:
 
 #### `install`
 
-Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+Install one or several dependencies, by name or from a manifest file, and optionally output linking/compilation flags for all of them.
 
-Example: `sn-vcpkg install libgit2 cjson -l -c`
+Examples: 
+- `sn-vcpkg install libgit2 cjson -l -c`
+- `sn-vcpkg install --manifest vcpkg.json -l -c`
 
 ```
-Usage: sn-vcpkg install [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <dep>...
+Usage:
+    sn-vcpkg install --manifest <string> [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet]
+    sn-vcpkg install [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <dep>...
 
 Install a list of vcpkg dependencies
 
 Options and flags:
     --help
         Display this help text.
+    --manifest <string>
+        vcpkg manifest file
     --output-compilation, -c
         Output (to STDOUT) compilation flags for installed libraries, one per line
     --output-linking, -l
@@ -298,39 +304,59 @@ Options and flags:
         Only error logging
 ```
 
-#### `install-manifest`
+#### `clang` and `clang++`
 
-Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
+These commands invoke clang or clang++ with all the configuration 
+flags required [^1] to run the specified dependencies.
 
-Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
+For example, say you have a snippet of C code that needs sqlite3 dependency:
 
-```
-Usage: sn-vcpkg install-manifest [--output-compilation] [--output-linking] [--vcpkg-root-manual <location> [--no-bootstrap] | --vcpkg-root-env <env-var> [--no-bootstrap] | --no-bootstrap] [--vcpkg-install <dir>] [--no-bootstrap] [--verbose] [--quiet] <vcpkg manifest file>
+```c 
+#include <stdio.h>
+#include <sqlite3.h> 
 
-Install vcpkg dependencies from a manifest file (like vcpkg.json)
+int main(int argc, char* argv[]) {
+   sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
 
-Options and flags:
-    --help
-        Display this help text.
-    --output-compilation, -c
-        Output (to STDOUT) compilation flags for installed libraries, one per line
-    --output-linking, -l
-        Output (to STDOUT) linking flags for installed libraries, one per line
-    --vcpkg-root-manual <location>
-        Initialise vcpkg in this location
-    --no-bootstrap
-        Allow bootstrapping vcpkg from scratch
-    --vcpkg-root-env <env-var>
-        Pick up vcpkg root from the environment variable
-    --vcpkg-install <dir>
-        folder where packages will be installed
-    --verbose, -v
-        Verbose logging
-    --quiet, -q
-        Only error logging
+   rc = sqlite3_open("test.db", &db);
+
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+   sqlite3_close(db);
+}
 ```
 
+You can compile it directly by running 
 
+```
+sn-vcpkg clang sqlite3 -- test-sqlite.c
+```
+
+Or if you have a vcpkg manifest file:
+
+```json 
+{
+ "name": "my-application",
+ "version": "0.15.2",
+ "dependencies": ["sqlite3"]
+}
+```
+
+You can use that as well:
+
+```
+sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
+```
+
+All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+[^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
 ### Core
 
@@ -359,7 +385,7 @@ compilation arguments from installed vcpkg dependencies.
 **Defaults**
 ```scala
 VcpkgNativeConfig()
-// res3: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res2: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -404,7 +430,7 @@ VcpkgNativeConfig().withPrependLinkingOptions(true)
 ```scala
 // Completely overwrite
 VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "libcmark"))
-// res8: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res7: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -414,7 +440,7 @@ VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "
 
 // Append only
 VcpkgNativeConfig().addRenamedLibrary("cjson", "libcjson")
-// res9: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res8: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -431,7 +457,7 @@ Specification for vcpkg dependencies. Can be either:
 
 ```scala
 VcpkgDependencies("cmark", "cjson")
-// res10: VcpkgDependencies = Names(
+// res9: VcpkgDependencies = Names(
 //   deps = List(
 //     Dependency(name = "cmark", features = Set()),
 //     Dependency(name = "cjson", features = Set())
@@ -443,14 +469,14 @@ VcpkgDependencies("cmark", "cjson")
 
 ```scala
 VcpkgDependencies(new java.io.File("./vcpkg.json"))
-// res11: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
+// res10: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
 ```
 
 - a list of detailed dependency specs:
 
 ```scala
 VcpkgDependencies.Names(List(Dependency("libpq", Set("arm-build")), Dependency.parse("cpprestsdk[boost]")))
-// res12: Names = Names(
+// res11: Names = Names(
 //   deps = List(
 //     Dependency(name = "libpq", features = Set("arm-build")),
 //     Dependency(name = "cpprestsdk", features = Set("boost"))

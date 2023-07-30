@@ -76,7 +76,7 @@ lazy val docs =
     .dependsOn(core.jvm(V.scala3), cli.jvm(V.scala3))
     .settings(scalaVersion := V.scala3)
     .settings(
-      mdocVariables := Map("VERSION" -> "0.0.11", "SCALA3_VERSION" -> V.scala3)
+      mdocVariables := Map("VERSION" -> "0.0.13", "SCALA3_VERSION" -> V.scala3)
     )
 
 lazy val docsDrifted = taskKey[Boolean]("")
@@ -153,6 +153,7 @@ lazy val cli = projectMatrix
   .settings(
     name := "sn-vcpkg",
     run / fork := true,
+    run / baseDirectory := (ThisBuild / baseDirectory).value,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
     libraryDependencies += "io.circe" %% "circe-parser" % V.circe,

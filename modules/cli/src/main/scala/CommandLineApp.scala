@@ -8,10 +8,23 @@ import io.circe.Codec
 import io.circe.CodecDerivation
 import io.circe.Decoder
 
+enum Compiler:
+  case Clang, ClangPP
+
 enum Action:
+  case Install(dependencies: VcpkgDependencies, out: OutputOptions)
+      extends Action
+  case InvokeCompiler(
+      compiler: Compiler,
+      dependencies: VcpkgDependencies,
+      args: Seq[String]
+  ) extends Action
   case Bootstrap
-  case Install(dependencies: Seq[String], out: OutputOptions) extends Action
-  case InstallManifest(file: File, out: OutputOptions)        extends Action
+end Action
+
+case class SuspendedAction(apply: Seq[String] => Action)
+object SuspendedAction:
+  def immediate(action: Action) = SuspendedAction(_ => action)
 
 case class OutputOptions(compile: Boolean, linking: Boolean)
 
@@ -107,26 +120,23 @@ object Options extends VcpkgPluginImpl:
 
   private val out = (outputCompile, outputLinking).mapN(OutputOptions.apply)
 
-  private val actionInstall =
-    (
-      Opts
-        .arguments[String](metavar = "dep")
-        .map(_.toList),
-      out,
-    )
-      .mapN(Action.Install.apply)
+  private val deps =
+    Opts
+      .option[String](
+        "manifest",
+        help = "vcpkg manifest file"
+      )
+      .map(new File(_))
+      .validate("File should exist")(f => f.exists() && f.isFile())
+      .map(VcpkgDependencies.apply)
+      .orElse(
+        Opts
+          .arguments[String](metavar = "dep")
+          .map(_.toList)
+          .map(deps => VcpkgDependencies.apply(deps*))
+      )
 
-  private val actionInstallManifest =
-    (
-      Opts
-        .argument[String](
-          "vcpkg manifest file"
-        )
-        .map(new File(_))
-        .validate("File should exist")(f => f.exists() && f.isFile()),
-      out
-    )
-      .mapN(Action.InstallManifest.apply)
+  private val actionInstall = (deps, out).mapN(Action.Install.apply)
 
   val logger = ExternalLogger(
     debug = scribe.debug(_),
@@ -150,23 +160,37 @@ object Options extends VcpkgPluginImpl:
 
   private val install =
     Opts.subcommand("install", "Install a list of vcpkg dependencies")(
-      (actionInstall, configOpts).tupled
+      (actionInstall.map(SuspendedAction.immediate), configOpts).tupled
     )
 
   private val bootstrap =
     Opts.subcommand("bootstrap", "Bootstrap vcpkg")(
-      configOpts.map(Action.Bootstrap -> _)
+      configOpts.map(SuspendedAction.immediate(Action.Bootstrap) -> _)
     )
 
-  private val installManifest = Opts.subcommand(
-    "install-manifest",
-    "Install vcpkg dependencies from a manifest file (like vcpkg.json)"
-  )(
-    (actionInstallManifest, configOpts).tupled
+  private def compilerCommand(compiler: Compiler) = deps.map(d =>
+    SuspendedAction(rest => Action.InvokeCompiler(compiler, d, rest))
   )
 
+  private val clang =
+    Opts.subcommand(
+      "clang",
+      "Invoke clang with the correct flags for passed dependencies" +
+        "The format of the command is [sn-vcpkg clang <flags> <dependencies> -- <clang arguments>"
+    )(
+      (compilerCommand(Compiler.Clang), configOpts).tupled
+    )
+  private val clangPP =
+    Opts.subcommand(
+      "clang++",
+      "Invoke clang++ with the correct flags for passed dependencies. \n" +
+        "The format of the command is [sn-vcpkg clang++ <flags> <dependencies> -- <clang arguments>"
+    )(
+      (compilerCommand(Compiler.ClangPP), configOpts).tupled
+    )
+
   val opts =
-    Command(name, header)(install orElse installManifest orElse bootstrap)
+    Command(name, header)(install orElse bootstrap orElse clang orElse clangPP)
 
 end Options
 
@@ -209,14 +233,17 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
       .clearHandlers()
       .withHandler(writer = scribe.writer.SystemErrWriter)
       .replace()
-    opts.parse(args) match
+    val arguments = args.takeWhile(_ != "--")
+    val rest      = args.drop(arguments.length + 1)
+    opts.parse(arguments) match
       case Left(help) =>
         val (modified, code) =
           if help.errors.nonEmpty then help.copy(body = Nil) -> -1
           else help                                          -> 0
         System.err.println(modified)
         if code != 0 then sys.exit(code)
-      case Right((action, config)) =>
+      case Right((suspended, config)) =>
+        val action = suspended.apply(rest)
         import config.*
         if verbose then
           scribe.Logger.root.withMinimumLevel(scribe.Level.Trace).replace()
@@ -268,13 +295,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               case Right(value) =>
                 val bin = vcpkgBinaryImpl(value, logger)
                 scribe.info(s"Vcpkg bootstrapped in $bin")
-          case action: (Action.Install | Action.InstallManifest) =>
-            val (output, deps) = action match
-              case Action.Install(dependencies, out) =>
-                out -> VcpkgDependencies(dependencies*)
-              case Action.InstallManifest(file, out) =>
-                out -> VcpkgDependencies(file)
-
+          case Action.Install(deps, output) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
 
             import io.circe.parser.decode
@@ -290,6 +311,36 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               allDeps,
               result.filter((k, v) => allDeps.contains(k))
             ).foreach(println)
+          case Action.InvokeCompiler(compiler, deps, rest) =>
+            val result = vcpkgInstallImpl(deps, manager, logger)
+            import io.circe.parser.decode
+            import C.given
+            val allDeps =
+              deps.dependencies(str =>
+                decode[VcpkgManifestFile](str).fold(throw _, identity)
+              )
+            val compilerArgs = List.newBuilder[String]
+
+            compilerArgs += (compiler match
+              case Compiler.Clang   => "clang"
+              case Compiler.ClangPP => "clang++"
+            )
+
+            compilerArgs.addAll(rest)
+
+            printOutput(
+              OutputOptions(compile = true, linking = true),
+              allDeps,
+              result.filter((k, v) => allDeps.contains(k))
+            ).foreach(compilerArgs.addOne)
+
+
+            scribe.debug(s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]")
+
+            val exitCode = scala.sys.process.Process(compilerArgs.result()).!
+
+            sys.exit(exitCode)
+
         end match
     end match
   end main
