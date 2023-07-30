@@ -14,7 +14,7 @@
     - [CLI](#cli)
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
-      - [`install-manifest`](#install-manifest)
+    - [`clang` and `clang++`](#clang-and-clang)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -268,9 +268,11 @@ Options and flags:
 
 #### `install`
 
-Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+Install one or several dependencies, by name or from a manifest file, and optionally output linking/compilation flags for all of them.
 
-Example: `sn-vcpkg install libgit2 cjson -l -c`
+Examples: 
+- `sn-vcpkg install libgit2 cjson -l -c`
+- `sn-vcpkg install --manifest vcpkg.json -l -c`
 
 ```
 Usage:
@@ -302,42 +304,7 @@ Options and flags:
         Only error logging
 ```
 
-#### `install-manifest`
-
-Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
-
-Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
-
-```
-Unexpected argument: install-manifest
-
-Usage:
-    sn-vcpkg install
-    sn-vcpkg bootstrap
-    sn-vcpkg clang
-    sn-vcpkg clang++
-
-Bootstraps and installs vcpkg dependencies in a way compatible with 
-the build tool plugins for SBT or Mill
-
-Options and flags:
-    --help
-        Display this help text.
-
-Subcommands:
-    install
-        Install a list of vcpkg dependencies
-    bootstrap
-        Bootstrap vcpkg
-    clang
-        Invoke clang with the correct flags for passed dependenciesThe format of the command is [sn-vcpkg clang <flags> <dependencies> -- <clang arguments>
-    clang++
-        Invoke clang++ with the correct flags for passed dependencies. 
-        The format of the command is [sn-vcpkg clang++ <flags> <dependencies> -- <clang arguments>
-```
-
-
-### `clang` and `clang++`
+#### `clang` and `clang++`
 
 These commands invoke clang or clang++ with all the configuration 
 flags required [^1] to run the specified dependencies.
@@ -422,7 +389,7 @@ compilation arguments from installed vcpkg dependencies.
 **Defaults**
 ```scala
 VcpkgNativeConfig()
-// res3: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res2: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -467,7 +434,7 @@ VcpkgNativeConfig().withPrependLinkingOptions(true)
 ```scala
 // Completely overwrite
 VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "libcmark"))
-// res8: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res7: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -477,7 +444,7 @@ VcpkgNativeConfig().withRenamedLibraries(Map("cjson" -> "libcjson", "cmark" -> "
 
 // Append only
 VcpkgNativeConfig().addRenamedLibrary("cjson", "libcjson")
-// res9: VcpkgNativeConfig = Vcpkg NativeConfig: 
+// res8: VcpkgNativeConfig = Vcpkg NativeConfig: 
 //   | approximate = true
 //   | autoConfigure = true
 //   | prependCompileOptions = true
@@ -494,7 +461,7 @@ Specification for vcpkg dependencies. Can be either:
 
 ```scala
 VcpkgDependencies("cmark", "cjson")
-// res10: VcpkgDependencies = Names(
+// res9: VcpkgDependencies = Names(
 //   deps = List(
 //     Dependency(name = "cmark", features = Set()),
 //     Dependency(name = "cjson", features = Set())
@@ -506,14 +473,14 @@ VcpkgDependencies("cmark", "cjson")
 
 ```scala
 VcpkgDependencies(new java.io.File("./vcpkg.json"))
-// res11: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
+// res10: VcpkgDependencies = ManifestFile(path = ./vcpkg.json)
 ```
 
 - a list of detailed dependency specs:
 
 ```scala
 VcpkgDependencies.Names(List(Dependency("libpq", Set("arm-build")), Dependency.parse("cpprestsdk[boost]")))
-// res12: Names = Names(
+// res11: Names = Names(
 //   deps = List(
 //     Dependency(name = "libpq", features = Set("arm-build")),
 //     Dependency(name = "cpprestsdk", features = Set("boost"))

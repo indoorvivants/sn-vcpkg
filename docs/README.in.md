@@ -14,7 +14,7 @@
     - [CLI](#cli)
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
-      - [`install-manifest`](#install-manifest)
+    - [`clang` and `clang++`](#clang-and-clang)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
       - [VcpkgNativeConfig](#vcpkgnativeconfig)
@@ -252,9 +252,11 @@ println(s"```\n$help\n```")
 
 #### `install`
 
-Install one or several dependencies, and optionally output linking/compilation flags for all of them.
+Install one or several dependencies, by name or from a manifest file, and optionally output linking/compilation flags for all of them.
 
-Example: `sn-vcpkg install libgit2 cjson -l -c`
+Examples: 
+- `sn-vcpkg install libgit2 cjson -l -c`
+- `sn-vcpkg install --manifest vcpkg.json -l -c`
 
 ```scala mdoc:passthrough 
 val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install", "--help")).fold(identity, _ => ???)
@@ -262,20 +264,7 @@ val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install"
 println(s"```\n$helpInstall\n```")
 ```
 
-#### `install-manifest`
-
-Install dependencies from a manifest file, and optionally output linking/compilation flags for all of them.
-
-Example: `sn-vcpkg install-manifest vcpkg.json -l -c`
-
-```scala mdoc:passthrough 
-val helpManifest = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install-manifest", "--help")).fold(identity, _ => ???)
-
-println(s"```\n$helpManifest\n```")
-```
-
-
-### `clang` and `clang++`
+#### `clang` and `clang++`
 
 These commands invoke clang or clang++ with all the configuration 
 flags required [^1] to run the specified dependencies.
