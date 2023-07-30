@@ -153,6 +153,7 @@ lazy val cli = projectMatrix
   .settings(
     name := "sn-vcpkg",
     run / fork := true,
+    run / baseDirectory := (ThisBuild / baseDirectory).value,
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     libraryDependencies += "com.monovore" %% "decline" % V.decline,
     libraryDependencies += "io.circe" %% "circe-parser" % V.circe,

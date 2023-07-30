@@ -61,15 +61,22 @@ jobs:
           
           curl -fLo cs https://github.com/coursier/launchers/raw/master/coursier &&
           chmod +x cs
-          
-          ./cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -- bootstrap
 
-          ./cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -- install -v libpq s2n
+          ./cs bootstrap com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -f -o local_cli
+          
+          ./local_cli -- bootstrap
+
+          ./local_cli -- install -v libpq s2n
 
           echo '{"name": "my-application","version": "0.15.2","dependencies": ["sqlite3"]}' > test-vcpkg.json
-          ./cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -- install-manifest -v test-vcpkg.json
+          ./local_cli -- install-manifest -v test-vcpkg.json
 
-          ./cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -- install -q -c -l libpq s2n
+          ./local_cli -- clang sqlite3 -- .github/workflows/fixutres/test-sqlite.c
+          ./local_cli -- clang --manifest test-vcpkg.json -- .github/workflows/fixutres/test-sqlite.c
+
+          ./local_cli -- clang++ sqlite3 -- .github/workflows/fixutres/test-sqlite.c
+          ./local_cli -- clang++ --manifest test-vcpkg.json -- .github/workflows/fixutres/test-sqlite.c
+
           
 
   windows_build:
