@@ -318,6 +318,51 @@ All the arguments after `--` will be passed to clang/clang++ without modificatio
 
 [^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
+### Docker base image
+
+Because of the sheer number of different tools required to install 
+packages from vcpkg (like libtool, curl, zip/unzip, autoconf, make, cmake, etc.) we provide a Docker base image that contains _some_ of them. The list is by no means exhaustive and a PR adding more will be happily accepted.
+
+The docker image contains the following:
+
+1. Ubuntu 22.04 base
+2. OpenJDK 17
+3. Tools like
+
+   ```
+   clang zip unzip tar make cmake autoconf ninja-build
+   pkg-config git libtool curl
+   ```
+4. SBT (1.9.x)
+5. Coursier 
+6. `sn-vpkg` CLI itself
+
+Te purpose of this docker image is to be used as a baser on CI, e.g.:
+
+```docker
+# huge container we use only for builds 
+FROM keynmol/sn-vcpkg:latest as dev
+
+# install your application's dependencies
+RUN sn-vcpkg install curl
+
+WORKDIR /workdir
+
+# copy your sources into container
+COPY . .
+
+# run the build of your scala native application
+RUN sbt myApp/nativeLink
+
+# This is the actual, much smaller container that will run the app
+FROM <runtime-container> 
+
+# copy the built app from the dev container
+COPY --from=dev /workdir/build/server /usr/bin/server
+
+ENTRYPOINT ["server"]
+```
+
 ### Core
 
 ```scala mdoc:invisible 
