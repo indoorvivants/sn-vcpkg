@@ -47,7 +47,7 @@ val V = new {
 
   val scalaNative = "0.4.14"
 
-  val circe = "0.14.5"
+  val circe = "0.14.6"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
