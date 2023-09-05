@@ -19,7 +19,7 @@ object VcpkgNativeModuleSpec extends utest.TestSuite {
         object foo extends VcpkgNativeModule {
           def vcpkgDependencies = T(VcpkgDependencies("cjson"))
           def scalaVersion = T("3.2.2")
-          def scalaNativeVersion = T("0.4.14")
+          def scalaNativeVersion = T("0.4.15")
 
           override def vcpkgNativeConfig =
             T(super.vcpkgNativeConfig().addRenamedLibrary("cjson", "libcjson"))
