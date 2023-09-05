@@ -334,8 +334,9 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               result.filter((k, v) => allDeps.contains(k))
             ).foreach(compilerArgs.addOne)
 
-
-            scribe.debug(s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]")
+            scribe.debug(
+              s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]"
+            )
 
             val exitCode = scala.sys.process.Process(compilerArgs.result()).!
 
