@@ -7,6 +7,7 @@ import java.nio.file.Files
 import java.util.stream.Collectors
 import com.indoorvivants.detective.Platform
 import Platform.OS._
+import scala.util.control.NonFatal
 
 object VcpkgBootstrap {
   private val REMOTE_URI = "https://github.com/microsoft/vcpkg"
@@ -23,17 +24,32 @@ object VcpkgBootstrap {
       case _       => "vcpkg"
     }
 
-  def clone(directory: File) = {
-    import org.eclipse.jgit.api.Git
+  private def cloneWithGit(directory: File, log: ExternalLogger) = {
+    val cmd = Seq(
+      "git",
+      "clone",
+      "--single-branch",
+      "--recurse-submodules",
+      REMOTE_URI,
+      directory.toString()
+    )
 
-    val repo = Git
-      .cloneRepository()
-      .setURI(REMOTE_URI)
-      .setDirectory(directory)
-      .setBranchesToClone(Arrays.asList("refs/heads/master"))
-      .setCloneAllBranches(false)
-      .setCloneSubmodules(true)
-      .call()
+    sys.process.Process(cmd).! == 0
+  }
+
+  def clone(directory: File, log: ExternalLogger) = {
+    if (!gitAvailable(log) || !cloneWithGit(directory, log)) {
+      import org.eclipse.jgit.api.Git
+
+      val repo = Git
+        .cloneRepository()
+        .setURI(REMOTE_URI)
+        .setDirectory(directory)
+        .setBranchesToClone(Arrays.asList("refs/heads/master"))
+        .setCloneAllBranches(false)
+        .setCloneSubmodules(true)
+        .call()
+    }
 
   }
 
@@ -72,5 +88,23 @@ object VcpkgBootstrap {
     )
 
     new Vcpkg(config, logger)
+  }
+
+  private def gitAvailable(log: ExternalLogger): Boolean = {
+    val cmd = Seq("git", "-v")
+
+    try {
+      val contents = sys.process.Process(cmd).!!
+      contents.startsWith("git version")
+    } catch {
+      case NonFatal(_) =>
+        log.warn(
+          "`git` command is not available, falling back to JGit which is slower"
+        )
+
+        false
+
+    }
+
   }
 }
