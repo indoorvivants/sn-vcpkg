@@ -91,7 +91,7 @@ object VcpkgBootstrap {
   }
 
   private def gitAvailable(log: ExternalLogger): Boolean = {
-    val cmd = Seq("git", "-v")
+    val cmd = Seq("git", "--version")
 
     try {
       val contents = sys.process.Process(cmd).!!
