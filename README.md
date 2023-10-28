@@ -15,6 +15,7 @@
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
       - [`clang` and `clang++`](#clang-and-clang)
+      - [`scala-cli`](#scala-cli)
     - [Docker base image](#docker-base-image)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
@@ -356,6 +357,59 @@ sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 ```
 
 All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+#### `scala-cli`
+
+This command invokes your local installation of Scala CLI (`scala-cli` must be available on PATH),
+and passes all the flags required by the specified dependencies [^1].
+
+For example, say you have a Scala CLI script using [Porcupine](https://github.com/armanbilge/porcupine), a cross-platform functional library for Sqlite3:
+
+**scala-cli-sqlite3.scala**
+```scala
+
+//> using dep "com.armanbilge::porcupine::0.0.1"
+//> using platform scala-native
+//> using scala 3.3.1
+
+import porcupine.*
+import cats.effect.IOApp
+import cats.effect.IO
+import cats.syntax.all.*
+import scodec.bits.ByteVector
+
+import Codec.*
+
+object Test extends IOApp.Simple:
+  val run =
+    Database
+      .open[IO](":memory:")
+      .use: db =>
+        db.execute(sql"create table porcupine (n, i, r, t, b);".command) *>
+          db.execute(
+            sql"insert into porcupine values(${`null`}, $integer, $real, $text, $blob);".command,
+            (None, 42L, 3.14, "quill-pig", ByteVector(0, 1, 2, 3))
+          ) *>
+          db.unique(
+            sql"select b, t, r, i, n from porcupine;"
+              .query(blob *: text *: real *: integer *: `null` *: nil)
+          ).flatTap(IO.println)
+      .void
+end Test
+```
+
+To run it with Scala Native, you must have `sqlite3` native 
+dependency installed and configured, along with correct flags
+passed to Scala Native.
+
+You can run the script like this:
+
+```
+sn-vcpkg scala-cli sqlite3 -- run scala-cli-sqlite3.scala
+```
+
+The sn-vcpkg CLI will add the required `--native-compile/--native-linking` flags to the _end_ of your argument list automatically.
+
 
 [^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 
