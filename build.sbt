@@ -21,11 +21,11 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 val V = new {
-  val scala213 = "2.13.11"
+  val scala213 = "2.13.12"
 
   val scala212 = "2.12.18"
 
-  val scala3 = "3.2.2"
+  val scala3 = "3.3.1"
 
   val dirs = "26"
 
@@ -43,9 +43,9 @@ val V = new {
 
   val decline = "2.4.1"
 
-  val scribe = "3.11.5"
+  val scribe = "3.12.2"
 
-  val scalaNative = "0.4.15"
+  val scalaNative = "0.4.16"
 
   val circe = "0.14.6"
 
@@ -76,7 +76,7 @@ lazy val docs =
     .dependsOn(core.jvm(V.scala3), cli.jvm(V.scala3))
     .settings(scalaVersion := V.scala3)
     .settings(
-      mdocVariables := Map("VERSION" -> "0.0.13", "SCALA3_VERSION" -> V.scala3)
+      mdocVariables := Map("VERSION" -> "0.0.16", "SCALA3_VERSION" -> V.scala3)
     )
 
 lazy val docsDrifted = taskKey[Boolean]("")
