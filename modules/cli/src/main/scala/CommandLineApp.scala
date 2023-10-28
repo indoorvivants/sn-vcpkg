@@ -14,11 +14,18 @@ enum Compiler:
 enum Action:
   case Install(dependencies: VcpkgDependencies, out: OutputOptions)
       extends Action
+
   case InvokeCompiler(
       compiler: Compiler,
       dependencies: VcpkgDependencies,
       args: Seq[String]
   ) extends Action
+
+  case InvokeScalaCLI(
+      dependencies: VcpkgDependencies,
+      args: Seq[String]
+  ) extends Action
+
   case Bootstrap
 end Action
 
@@ -171,6 +178,8 @@ object Options extends VcpkgPluginImpl:
   private def compilerCommand(compiler: Compiler) = deps.map(d =>
     SuspendedAction(rest => Action.InvokeCompiler(compiler, d, rest))
   )
+  private def scalaCliCommand =
+    deps.map(d => SuspendedAction(rest => Action.InvokeScalaCLI(d, rest)))
 
   private val clang =
     Opts.subcommand(
@@ -188,9 +197,19 @@ object Options extends VcpkgPluginImpl:
     )(
       (compilerCommand(Compiler.ClangPP), configOpts).tupled
     )
+  private val scalaCli =
+    Opts.subcommand(
+      "scala-cli",
+      "Invoke Scala CLI with correct flags for passed dependencies. Sets --native automatically!" +
+        "The format of the command is [sn-vcpkg scala-cli <flags> <dependencies> -- <scala-cli arguments>"
+    )(
+      (scalaCliCommand, configOpts).tupled
+    )
 
   val opts =
-    Command(name, header)(install orElse bootstrap orElse clang orElse clangPP)
+    Command(name, header)(
+      install orElse bootstrap orElse clang orElse clangPP orElse scalaCli
+    )
 
 end Options
 
@@ -224,6 +243,14 @@ object C:
 
     }
 end C
+
+enum NativeFlag:
+  case Compilation(value: String)
+  case Linking(value: String)
+
+  def get: String = this match
+    case Compilation(value) => value
+    case Linking(value)     => value
 
 object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
   import Options.*
@@ -263,12 +290,12 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
         def summary(mp: Seq[Dependency]) =
           mp.map(_.name).toList.sorted.mkString(", ")
 
-        def printOutput(
+        def computeNativeFlags(
             opt: OutputOptions,
             deps: List[Dependency],
             info: Map[Dependency, FilesInfo]
-        ) =
-          val flags = List.newBuilder[String]
+        ): List[NativeFlag] =
+          val flags = List.newBuilder[NativeFlag]
 
           if opt.compile then
             flags ++= compilationFlags(
@@ -276,17 +303,18 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               deps.map(_.short),
               logger,
               VcpkgNativeConfig()
-            )
+            ).map(NativeFlag.Compilation(_))
+
           if opt.linking then
             flags ++= linkingFlags(
               configurator(info),
               deps.map(_.short),
               logger,
               VcpkgNativeConfig()
-            )
+            ).map(NativeFlag.Linking(_))
 
           flags.result().distinct
-        end printOutput
+        end computeNativeFlags
 
         action match
           case Action.Bootstrap =>
@@ -306,7 +334,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
                 decode[VcpkgManifestFile](str).fold(throw _, identity)
               )
 
-            printOutput(
+            computeNativeFlags(
               output,
               allDeps,
               result.filter((k, v) => allDeps.contains(k))
@@ -328,16 +356,52 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
 
             compilerArgs.addAll(rest)
 
-            printOutput(
+            computeNativeFlags(
               OutputOptions(compile = true, linking = true),
               allDeps,
               result.filter((k, v) => allDeps.contains(k))
-            ).foreach(compilerArgs.addOne)
+            ).map(_.get).foreach(compilerArgs.addOne)
 
-
-            scribe.debug(s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]")
+            scribe.debug(
+              s"Invoking ${compiler} with arguments: [${compilerArgs.result().mkString(" ")}]"
+            )
 
             val exitCode = scala.sys.process.Process(compilerArgs.result()).!
+
+            sys.exit(exitCode)
+
+          case Action.InvokeScalaCLI(deps, rest) =>
+            val result = vcpkgInstallImpl(deps, manager, logger)
+            import io.circe.parser.decode
+            import C.given
+            val allDeps =
+              deps.dependencies(str =>
+                decode[VcpkgManifestFile](str).fold(throw _, identity)
+              )
+            val scalaCliArgs = List.newBuilder[String]
+
+            scalaCliArgs.addOne("scala-cli")
+            scalaCliArgs.addAll(rest)
+
+            computeNativeFlags(
+              OutputOptions(compile = true, linking = true),
+              allDeps,
+              result.filter((k, v) => allDeps.contains(k))
+            ).foreach {
+              case NativeFlag.Compilation(value) =>
+                scalaCliArgs.addOne("--native-compile")
+                scalaCliArgs.addOne(value)
+
+              case NativeFlag.Linking(value) =>
+                scalaCliArgs.addOne("--native-linking")
+                scalaCliArgs.addOne(value)
+            }
+
+            scribe.debug(
+              s"Invoking Scala CLI with arguments: [${scalaCliArgs.result().mkString(" ")}]"
+            )
+
+            val exitCode = scala.sys.process.Process(scalaCliArgs.result()).!
 
             sys.exit(exitCode)
 

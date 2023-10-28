@@ -15,6 +15,7 @@
       - [`bootstrap`](#bootstrap)
       - [`install`](#install)
       - [`clang` and `clang++`](#clang-and-clang)
+      - [`scala-cli`](#scala-cli)
     - [Docker base image](#docker-base-image)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
@@ -76,7 +77,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.13 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.16 -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -102,7 +103,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.13")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.16")
 ```
 
 And in your build.sbt:
@@ -138,7 +139,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.13`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.16`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -149,7 +150,7 @@ import com.indoorvivants.vcpkg._
 
 import mill._, mill.scalalib._
 object example extends ScalaModule with VcpkgModule {
-  def scalaVersion = "3.2.2"
+  def scalaVersion = "3.3.1"
   def vcpkgDependencies = T(VcpkgDependencies("cmark", "cjson"))
 }
 ```
@@ -165,7 +166,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.13")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.16")
 ```
 
 In `build.sbt`:
@@ -195,7 +196,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.13`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.16`
 ```
 
 And use the `VcpkgNativeModule` mixin:
@@ -356,6 +357,59 @@ sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 ```
 
 All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+#### `scala-cli`
+
+This command invokes your local installation of Scala CLI (`scala-cli` must be available on PATH),
+and passes all the flags required by the specified dependencies [^1].
+
+For example, say you have a Scala CLI script using [Porcupine](https://github.com/armanbilge/porcupine), a cross-platform functional library for Sqlite3:
+
+**scala-cli-sqlite3.scala**
+```scala
+
+//> using dep "com.armanbilge::porcupine::0.0.1"
+//> using platform scala-native
+//> using scala 3.3.1
+
+import porcupine.*
+import cats.effect.IOApp
+import cats.effect.IO
+import cats.syntax.all.*
+import scodec.bits.ByteVector
+
+import Codec.*
+
+object Test extends IOApp.Simple:
+  val run =
+    Database
+      .open[IO](":memory:")
+      .use: db =>
+        db.execute(sql"create table porcupine (n, i, r, t, b);".command) *>
+          db.execute(
+            sql"insert into porcupine values(${`null`}, $integer, $real, $text, $blob);".command,
+            (None, 42L, 3.14, "quill-pig", ByteVector(0, 1, 2, 3))
+          ) *>
+          db.unique(
+            sql"select b, t, r, i, n from porcupine;"
+              .query(blob *: text *: real *: integer *: `null` *: nil)
+          ).flatTap(IO.println)
+      .void
+end Test
+```
+
+To run it with Scala Native, you must have `sqlite3` native 
+dependency installed and configured, along with correct flags
+passed to Scala Native.
+
+You can run the script like this:
+
+```
+sn-vcpkg scala-cli sqlite3 -- run scala-cli-sqlite3.scala
+```
+
+The sn-vcpkg CLI will add the required `--native-compile/--native-linking` flags to the _end_ of your argument list automatically.
+
 
 [^1]: as long as the dependencies themselves provide a well configured pkg-config file, of course
 

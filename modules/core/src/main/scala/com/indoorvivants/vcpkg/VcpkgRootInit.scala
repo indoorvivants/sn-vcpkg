@@ -36,10 +36,10 @@ trait VcpkgRootInit { self =>
 case class VcpkgRoot(file: File, allowBootstrap: Boolean)
 
 object VcpkgRootInit {
-  case class FromEnv private[vcpkg] (
-      name: String,
-      allowBootstrap: Boolean,
-      env: Map[String, String]
+  class FromEnv private[vcpkg] (
+      val name: String,
+      val allowBootstrap: Boolean,
+      val env: Map[String, String]
   ) extends VcpkgRootInit {
     override def locate(log: ExternalLogger): Either[String, VcpkgRoot] =
       env.get(name) match {
@@ -80,9 +80,9 @@ object VcpkgRootInit {
       s"VcpkgRootInit.Manual[file=$file, allowBootstrap=$allowBootstrap]"
   }
 
-  case class SystemCache private[vcpkg] (
-      allowBootstrap: Boolean,
-      cacheDirDetector: CacheDirDetector
+  class SystemCache private[vcpkg] (
+      val allowBootstrap: Boolean,
+      val cacheDirDetector: CacheDirDetector
   ) extends VcpkgRootInit {
 
     private val cacheDir = cacheDirDetector.cacheDir
