@@ -2,7 +2,7 @@ package com.indoorvivants.vcpkg
 
 import scala.collection.immutable
 
-case class InstalledList private (deps: Vector[Dependency])
+class InstalledList private (val deps: Vector[Dependency])
 
 object InstalledList {
   def parse(lines: Vector[String], logger: ExternalLogger) = {
