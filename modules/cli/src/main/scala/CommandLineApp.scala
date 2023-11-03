@@ -338,7 +338,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               output,
               allDeps,
               result.filter((k, v) => allDeps.contains(k))
-            ).foreach(println)
+            ).map(_.get).foreach(println)
           case Action.InvokeCompiler(compiler, deps, rest) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
             import io.circe.parser.decode
