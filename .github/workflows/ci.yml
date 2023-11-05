@@ -55,6 +55,9 @@ jobs:
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
+      - uses: coursier/cache-action@v6
+      - uses: VirtusLab/scala-cli-setup@main
+
       - name: CLI tests
         shell: bash
         run: |
@@ -77,7 +80,7 @@ jobs:
           ./local_cli clang++ -v sqlite3 -- .github/workflows/fixtures/test-sqlite.c
           ./local_cli clang++ -v --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
 
-          ./local-cli scala-cli -v sqlite3 -- run .github/workflows/fixtures/test-scala-cli.scala
+          ./local_cli scala-cli -v sqlite3 -- run .github/workflows/fixtures/test-scala-cli.scala
           
 
   windows_build:
