@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-12]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -55,29 +55,32 @@ jobs:
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
+      - uses: coursier/cache-action@v6
+      - uses: VirtusLab/scala-cli-setup@main
+
       - name: CLI tests
         shell: bash
         run: |
-          set -e
+          set -xe
           
-          curl -fLo cs https://github.com/coursier/launchers/raw/master/coursier &&
-          chmod +x cs
+          curl -fLo cs https://github.com/coursier/launchers/raw/master/coursier && chmod +x cs
 
           ./cs bootstrap com.indoorvivants.vcpkg:sn-vcpkg_3:$(cat version) -f -o local_cli
           
           ./local_cli bootstrap
 
-          ./local_cli install -v libpq s2n
+          ./local_cli install -v -c -l libpq s2n
 
           echo '{"name": "my-application","version": "0.15.2","dependencies": ["sqlite3"]}' > test-vcpkg.json
-          ./local_cli install --manifest test-vcpkg.json
+          ./local_cli install -v -c -l --manifest test-vcpkg.json
 
-          ./local_cli clang sqlite3 -- .github/workflows/fixtures/test-sqlite.c
-          ./local_cli clang --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang -v sqlite3 -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang -v --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
 
-          ./local_cli clang++ sqlite3 -- .github/workflows/fixtures/test-sqlite.c
-          ./local_cli clang++ --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang++ -v sqlite3 -- .github/workflows/fixtures/test-sqlite.c
+          ./local_cli clang++ -v --manifest test-vcpkg.json -- .github/workflows/fixtures/test-sqlite.c
 
+          ./local_cli scala-cli -v sqlite3 -- run .github/workflows/fixtures/test-scala-cli.scala
           
 
   windows_build:
@@ -93,13 +96,6 @@ jobs:
 
       - name: Install pkg-config on Windows
         run: choco install pkgconfiglite
-      
-      # - name: Configure Pagefile
-      #   uses: al-cheb/configure-pagefile-action@v1.2
-      #   with:
-      #     minimum-size: 4GB
-      #     maximum-size: 16GB
-      #   if: runner.os == 'Windows'
       
       - uses: actions/checkout@v3
 
