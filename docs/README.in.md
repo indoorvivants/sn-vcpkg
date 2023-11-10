@@ -133,6 +133,8 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 - `vcpkgBinary` - the location of just the `vcpkg` binary itself. **Triggers bootstrap**
 
 - `vcpkgConfigurator` - see [VcpkgConfigurator](#vcpkgconfigurator)
+-
+- `vcpkgRun` - invoke the vcpkg CLI directly
 
 ### Mill plugin 
 
@@ -272,6 +274,17 @@ Then you get the correct flags. The name of the argument is not great, but it's 
 for an equally not great gotcha in vcpkg so I think we're even.
 
 
+#### `pass` command
+
+If you just want to invoke the vcpkg CLI, you can do so with the `pass` command:
+
+```
+sn-vcpkg pass -- help
+```
+
+Arguments after `--` will be passed directly to vcpkg, and its STDOUT output will be printed to STDOUT.
+
+
 #### `bootstrap`
 
 Only bootstrap vcpkg if necessary, without installing anything
@@ -282,7 +295,7 @@ val help = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("bootstrap", "--
 println(s"```\n$help\n```")
 ```
 
-#### `install`
+#### `install` command
 
 Install one or several dependencies, by name or from a manifest file, and optionally output linking/compilation flags for all of them.
 
@@ -296,7 +309,7 @@ val helpInstall = com.indoorvivants.vcpkg.cli.Options.opts.parse(Array("install"
 println(s"```\n$helpInstall\n```")
 ```
 
-#### `clang` and `clang++`
+#### `clang` and `clang++` commands
 
 These commands invoke clang or clang++ with all the configuration 
 flags required [^1] to run the specified dependencies.
@@ -348,7 +361,7 @@ sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 
 All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
 
-#### `scala-cli`
+#### `scala-cli` command
 
 This command invokes your local installation of Scala CLI (`scala-cli` must be available on PATH),
 and passes all the flags required by the specified dependencies [^1].
