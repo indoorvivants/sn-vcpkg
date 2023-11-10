@@ -45,6 +45,10 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator](
       "`VcpkgConfigurator` instance, which provides access to PkgConfig (a thin wrapper over pre-configured pkg-config) and some methods to approximate compilation/linking arguments for installed packages"
     )
+
+    val vcpkgRun = inputKey[Unit](
+      "Run the bootstrapped vcpkg CLI with a given list of arguments"
+    )
   }
 
   import autoImport._
@@ -100,6 +104,15 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
         root = vcpkg.VcpkgRoot(vcpkgRoot.value, vcpkgAllowBootstrap.value),
         logger = sbtLogger(sLog.value)
       )
+    },
+    vcpkgRun := {
+      import complete.DefaultParsers._
+      val args: Seq[String] = spaceDelimited("<arg>").parsed
+      val manager = vcpkgManager.value
+      val logger = sbtLogger(sLog.value)
+
+      vcpkgPassImpl(args, manager, logger).foreach(println)
+
     },
     vcpkgInstall := {
       val manager = vcpkgManager.value

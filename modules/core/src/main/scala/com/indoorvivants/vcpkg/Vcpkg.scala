@@ -74,4 +74,7 @@ class Vcpkg(
   def list(): Vector[String] =
     getLines(cmd("list", s"--triplet=$vcpkgTriplet"))
 
+  def pass(args: Seq[String]): Vector[String] =
+    getLines(cmdSeq(args))
+
 }
