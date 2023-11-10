@@ -8,7 +8,7 @@ int main(void)
  
   curl = curl_easy_init();
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+    curl_easy_setopt(curl, CURLOPT_URL, "https://httpbin.org/get");
     /* example.com is redirected, so we tell libcurl to follow redirection */
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
  

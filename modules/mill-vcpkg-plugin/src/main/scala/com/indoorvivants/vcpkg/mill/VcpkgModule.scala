@@ -18,6 +18,7 @@ import com.indoorvivants.vcpkg.ExternalLogger
 import com.indoorvivants.vcpkg.VcpkgConfigurator
 import mill.api.Logger
 import mill.define.Task
+import mill.define.Target
 
 trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
@@ -86,6 +87,17 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
     vcpkgInstallImpl(
       vcpkgDependencies(),
+      manager,
+      logger
+    )
+  }
+
+  def vcpkgRun(args: String*): Target[Unit] = T {
+    val manager = vcpkgManager()
+    val logger = millLogger(T.log)
+
+    vcpkgPassImpl(
+      args,
       manager,
       logger
     )

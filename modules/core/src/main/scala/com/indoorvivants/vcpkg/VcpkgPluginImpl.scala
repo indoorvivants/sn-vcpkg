@@ -74,6 +74,12 @@ trait VcpkgPluginImpl {
         vcpkgInstallDependenciesImpl(deps, manager, logger)
     }
 
+  protected def vcpkgPassImpl(
+      args: Seq[String],
+      manager: Vcpkg,
+      logger: ExternalLogger
+  ): Vector[String] = manager.pass(args)
+
   protected def vcpkgInstallManifestImpl(
       manifest: File,
       manager: Vcpkg,
