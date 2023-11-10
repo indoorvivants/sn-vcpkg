@@ -31,6 +31,8 @@ enum Action:
       args: Seq[String]
   ) extends Action
 
+  case Pass(args: Seq[String])
+
   case Bootstrap
 end Action
 
@@ -190,6 +192,11 @@ object Options extends VcpkgPluginImpl:
       Config.apply
     )
 
+  private val argsOpt =
+    Opts
+      .arguments[String](metavar = "arg")
+      .map(_.toList.toSeq)
+
   private val install =
     Opts.subcommand("install", "Install a list of vcpkg dependencies")(
       (actionInstall.map(SuspendedAction.immediate), configOpts).tupled
@@ -204,9 +211,21 @@ object Options extends VcpkgPluginImpl:
     (deps, rename).tupled.map((d, r) =>
       SuspendedAction(rest => Action.InvokeCompiler(compiler, d, r, rest))
     )
-  private def scalaCliCommand =
+
+  private val scalaCliCommand =
     (deps, rename).tupled.map((d, r) =>
       SuspendedAction(rest => Action.InvokeScalaCLI(d, r, rest))
+    )
+
+  private val passCommand =
+    Opts(SuspendedAction(rest => Action.Pass(rest)))
+
+  private val pass =
+    Opts.subcommand("pass", "Invoke vcpkg CLI with passed arguments")(
+      (
+        passCommand,
+        configOpts
+      ).tupled
     )
 
   private val clang =
@@ -236,7 +255,7 @@ object Options extends VcpkgPluginImpl:
 
   val opts =
     Command(name, header)(
-      install orElse bootstrap orElse clang orElse clangPP orElse scalaCli
+      install orElse bootstrap orElse clang orElse clangPP orElse scalaCli orElse pass
     )
 
 end Options
@@ -346,6 +365,8 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
         end computeNativeFlags
 
         action match
+          case Action.Pass(args) =>
+            vcpkgPassImpl(args, manager, logger).foreach(println)
           case Action.Bootstrap =>
             defaultRootInit.locate(logger) match
               case Left(value) => scribe.error(value)
