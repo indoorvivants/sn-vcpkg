@@ -77,7 +77,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.16 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.18 -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -103,7 +103,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.16")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.18")
 ```
 
 And in your build.sbt:
@@ -141,7 +141,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.16`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.18`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -168,7 +168,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.16")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.18")
 ```
 
 In `build.sbt`:
@@ -198,7 +198,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.16`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.18`
 ```
 
 And use the `VcpkgNativeModule` mixin:

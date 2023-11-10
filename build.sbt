@@ -76,7 +76,7 @@ lazy val docs =
     .dependsOn(core.jvm(V.scala3), cli.jvm(V.scala3))
     .settings(scalaVersion := V.scala3)
     .settings(
-      mdocVariables := Map("VERSION" -> "0.0.16", "SCALA3_VERSION" -> V.scala3)
+      mdocVariables := Map("VERSION" -> "0.0.18", "SCALA3_VERSION" -> V.scala3)
     )
 
 lazy val docsDrifted = taskKey[Boolean]("")
