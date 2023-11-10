@@ -12,17 +12,22 @@ enum Compiler:
   case Clang, ClangPP
 
 enum Action:
-  case Install(dependencies: VcpkgDependencies, out: OutputOptions)
-      extends Action
+  case Install(
+      dependencies: VcpkgDependencies,
+      out: OutputOptions,
+      rename: Map[String, String]
+  ) extends Action
 
   case InvokeCompiler(
       compiler: Compiler,
       dependencies: VcpkgDependencies,
+      rename: Map[String, String],
       args: Seq[String]
   ) extends Action
 
   case InvokeScalaCLI(
       dependencies: VcpkgDependencies,
+      rename: Map[String, String],
       args: Seq[String]
   ) extends Action
 
@@ -33,7 +38,10 @@ case class SuspendedAction(apply: Seq[String] => Action)
 object SuspendedAction:
   def immediate(action: Action) = SuspendedAction(_ => action)
 
-case class OutputOptions(compile: Boolean, linking: Boolean)
+case class OutputOptions(
+    compile: Boolean,
+    linking: Boolean
+)
 
 object Options extends VcpkgPluginImpl:
   private val name = "sn-vcpkg"
@@ -89,6 +97,22 @@ object Options extends VcpkgPluginImpl:
     .map(new File(_))
     .withDefault(defaultInstallDir)
 
+  private val rename = Opts
+    .option[String](
+      "rename",
+      metavar = "spec1,spec2,spec3",
+      help =
+        "rename packages when looking up their flags in pkg-config\ne.g. --rename curl=libcurl,cjson=libcjson"
+    )
+    .map: specs =>
+      specs
+        .split(',')
+        .map: spec =>
+          val List(from, to) = spec.split("=", 2).toList
+          from -> to
+        .toMap
+    .withDefault(Map.empty)
+
   private val verbose = Opts
     .flag(
       long = "verbose",
@@ -125,7 +149,8 @@ object Options extends VcpkgPluginImpl:
     )
     .orFalse
 
-  private val out = (outputCompile, outputLinking).mapN(OutputOptions.apply)
+  private val out =
+    (outputCompile, outputLinking).mapN(OutputOptions.apply)
 
   private val deps =
     Opts
@@ -143,7 +168,7 @@ object Options extends VcpkgPluginImpl:
           .map(deps => VcpkgDependencies.apply(deps*))
       )
 
-  private val actionInstall = (deps, out).mapN(Action.Install.apply)
+  private val actionInstall = (deps, out, rename).mapN(Action.Install.apply)
 
   val logger = ExternalLogger(
     debug = scribe.debug(_),
@@ -175,11 +200,14 @@ object Options extends VcpkgPluginImpl:
       configOpts.map(SuspendedAction.immediate(Action.Bootstrap) -> _)
     )
 
-  private def compilerCommand(compiler: Compiler) = deps.map(d =>
-    SuspendedAction(rest => Action.InvokeCompiler(compiler, d, rest))
-  )
+  private def compilerCommand(compiler: Compiler) =
+    (deps, rename).tupled.map((d, r) =>
+      SuspendedAction(rest => Action.InvokeCompiler(compiler, d, r, rest))
+    )
   private def scalaCliCommand =
-    deps.map(d => SuspendedAction(rest => Action.InvokeScalaCLI(d, rest)))
+    (deps, rename).tupled.map((d, r) =>
+      SuspendedAction(rest => Action.InvokeScalaCLI(d, r, rest))
+    )
 
   private val clang =
     Opts.subcommand(
@@ -293,7 +321,8 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
         def computeNativeFlags(
             opt: OutputOptions,
             deps: List[Dependency],
-            info: Map[Dependency, FilesInfo]
+            info: Map[Dependency, FilesInfo],
+            rename: Map[String, String]
         ): List[NativeFlag] =
           val flags = List.newBuilder[NativeFlag]
 
@@ -302,7 +331,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               configurator(info),
               deps.map(_.short),
               logger,
-              VcpkgNativeConfig()
+              VcpkgNativeConfig().withRenamedLibraries(rename)
             ).map(NativeFlag.Compilation(_))
 
           if opt.linking then
@@ -310,7 +339,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               configurator(info),
               deps.map(_.short),
               logger,
-              VcpkgNativeConfig()
+              VcpkgNativeConfig().withRenamedLibraries(rename)
             ).map(NativeFlag.Linking(_))
 
           flags.result().distinct
@@ -323,7 +352,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               case Right(value) =>
                 val bin = vcpkgBinaryImpl(value, logger)
                 scribe.info(s"Vcpkg bootstrapped in $bin")
-          case Action.Install(deps, output) =>
+          case Action.Install(deps, output, rename) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
 
             import io.circe.parser.decode
@@ -337,9 +366,10 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
             computeNativeFlags(
               output,
               allDeps,
-              result.filter((k, v) => allDeps.contains(k))
+              result.filter((k, v) => allDeps.contains(k)),
+              rename
             ).map(_.get).foreach(println)
-          case Action.InvokeCompiler(compiler, deps, rest) =>
+          case Action.InvokeCompiler(compiler, deps, rename, rest) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
             import io.circe.parser.decode
             import C.given
@@ -359,7 +389,8 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
             computeNativeFlags(
               OutputOptions(compile = true, linking = true),
               allDeps,
-              result.filter((k, v) => allDeps.contains(k))
+              result.filter((k, v) => allDeps.contains(k)),
+              rename
             ).map(_.get).foreach(compilerArgs.addOne)
 
             scribe.debug(
@@ -370,7 +401,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
 
             sys.exit(exitCode)
 
-          case Action.InvokeScalaCLI(deps, rest) =>
+          case Action.InvokeScalaCLI(deps, rename, rest) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
             import io.circe.parser.decode
             import C.given
@@ -386,7 +417,8 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
             computeNativeFlags(
               OutputOptions(compile = true, linking = true),
               allDeps,
-              result.filter((k, v) => allDeps.contains(k))
+              result.filter((k, v) => allDeps.contains(k)),
+              rename
             ).foreach {
               case NativeFlag.Compilation(value) =>
                 scalaCliArgs.addOne("--native-compile")

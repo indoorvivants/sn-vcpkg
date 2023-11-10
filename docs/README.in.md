@@ -241,6 +241,36 @@ $ sn-vcpkg install libgit2 -l -c
 
 This will install `libgit2` package, and output linking flags (`-l`) and compilation flags (`-c`), one per line.
 
+#### `--rename` argument
+
+All commands accept a `--rename name1=alt_name1,name2=alt_name2` because for some packages in 
+vcpkg the name of the package and the name under which it is installed in pkg-config might 
+be different.
+
+For example, curl is one of those. Running the simple command will complain that 
+pkg-config configuration was not found
+
+```
+$ sn-vcpkg install curl -l -c 
+...
+    [vcpkg stderr] Package curl was not found in the pkg-config search path.
+    [vcpkg stderr] Perhaps you should add the directory containing `curl.pc'
+    [vcpkg stderr] to the PKG_CONFIG_PATH environment variable
+    [vcpkg stderr] No package 'curl' found
+...
+```
+
+And the approximated arguments it will output will be insufficient.
+
+But if you ask to rename it during resolution:
+
+```
+$ sn-vcpkg install -l -c curl --rename curl=libcurl
+```
+
+Then you get the correct flags. The name of the argument is not great, but it's a bandaid
+for an equally not great gotcha in vcpkg so I think we're even.
+
 
 #### `bootstrap`
 
