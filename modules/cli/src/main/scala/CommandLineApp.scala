@@ -2,11 +2,12 @@ package com.indoorvivants.vcpkg
 package cli
 
 import cats.implicits.*
+import com.indoorvivants.detective.Platform
 import com.monovore.decline.*
-import java.io.File
 import io.circe.Codec
 import io.circe.CodecDerivation
 import io.circe.Decoder
+import java.io.File
 
 enum Compiler:
   case Clang, ClangPP
@@ -430,9 +431,12 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               deps.dependencies(str =>
                 decode[VcpkgManifestFile](str).fold(throw _, identity)
               )
+            val scalaCliBin = Platform.os match
+              case Platform.OS.Windows => "scala-cli.bat"
+              case _                   => "scala-cli"
             val scalaCliArgs = List.newBuilder[String]
 
-            scalaCliArgs.addOne("scala-cli")
+            scalaCliArgs.addOne(scalaCliBin)
             scalaCliArgs.addAll(rest)
 
             computeNativeFlags(
