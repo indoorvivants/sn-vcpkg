@@ -43,7 +43,7 @@ val V = new {
 
   val decline = "2.4.1"
 
-  val scribe = "3.12.2"
+  val scribe = "3.13.0"
 
   val scalaNative = "0.4.16"
 
