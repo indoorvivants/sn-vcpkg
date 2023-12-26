@@ -31,7 +31,7 @@ val V = new {
 
   val detective = "0.0.2"
 
-  val eclipseGit = "6.4.0.202211300538-r"
+  val eclipseGit = "6.8.0.202311291450-r"
 
   val mill = "0.10.12"
 
