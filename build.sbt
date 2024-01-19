@@ -45,7 +45,7 @@ val V = new {
 
   val scribe = "3.12.2"
 
-  val scalaNative = "0.4.16"
+  val scalaNative = "0.4.17"
 
   val circe = "0.14.6"
 
