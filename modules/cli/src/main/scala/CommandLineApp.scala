@@ -362,7 +362,7 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               VcpkgNativeConfig().withRenamedLibraries(rename)
             ).map(NativeFlag.Linking(_))
 
-          flags.result().distinct
+          flags.result()
         end computeNativeFlags
 
         action match
