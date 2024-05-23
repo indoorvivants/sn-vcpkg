@@ -1,6 +1,7 @@
 //> using dep "com.armanbilge::porcupine::0.0.1"
 //> using platform scala-native
 //> using scala 3.3.1
+//> using nativeVersion 0.4.17
 
 import porcupine.*
 import cats.effect.IOApp
