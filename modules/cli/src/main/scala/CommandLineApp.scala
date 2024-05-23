@@ -8,6 +8,9 @@ import io.circe.Codec
 import io.circe.CodecDerivation
 import io.circe.Decoder
 import java.io.File
+import java.nio.file.Paths
+import scala.util.Using
+import java.io.FileWriter
 
 enum Compiler:
   case Clang, ClangPP
@@ -33,6 +36,13 @@ enum Action:
   ) extends Action
 
   case Pass(args: Seq[String])
+
+  case SetupClangd(
+      dependencies: VcpkgDependencies,
+      filename: String,
+      rename: Map[String, String],
+      force: Boolean
+  )
 
   case Bootstrap
 end Action
@@ -125,6 +135,15 @@ object Options extends VcpkgPluginImpl:
     )
     .orFalse
 
+  private def force(description: String) = Opts
+    .flag(
+      long = "force",
+      short = "f",
+      visibility = Visibility.Normal,
+      help = description
+    )
+    .orFalse
+
   private val quiet = Opts
     .flag(
       long = "quiet",
@@ -171,7 +190,23 @@ object Options extends VcpkgPluginImpl:
           .map(deps => VcpkgDependencies.apply(deps*))
       )
 
+  private val compileFlagsFilename = Opts
+    .option[String](
+      "out",
+      help =
+        "Path to file where flags will be written (default: ./compile_flags.txt)"
+    )
+    .withDefault("compile_flags.txt")
+
   private val actionInstall = (deps, out, rename).mapN(Action.Install.apply)
+
+  private val actionSetupClangd =
+    (
+      deps,
+      compileFlagsFilename,
+      rename,
+      force("Overwrite the file with flags even if it exists")
+    ).mapN(Action.SetupClangd.apply)
 
   val logger = ExternalLogger(
     debug = scribe.debug(_),
@@ -201,6 +236,14 @@ object Options extends VcpkgPluginImpl:
   private val install =
     Opts.subcommand("install", "Install a list of vcpkg dependencies")(
       (actionInstall.map(SuspendedAction.immediate), configOpts).tupled
+    )
+
+  private val setupClangd =
+    Opts.subcommand(
+      "setup-clangd",
+      "Setup Clangd (e.g. with compile_flags.txt)"
+    )(
+      (actionSetupClangd.map(SuspendedAction.immediate), configOpts).tupled
     )
 
   private val bootstrap =
@@ -256,7 +299,13 @@ object Options extends VcpkgPluginImpl:
 
   val opts =
     Command(name, header)(
-      install orElse bootstrap orElse clang orElse clangPP orElse scalaCli orElse pass
+      install orElse
+        bootstrap orElse
+        clang orElse
+        clangPP orElse
+        scalaCli orElse
+        pass orElse
+        setupClangd
     )
 
 end Options
@@ -391,6 +440,33 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
               result.filter((k, v) => allDeps.contains(k)),
               rename
             ).map(_.get).foreach(println)
+          case Action.SetupClangd(deps, output, rename, force) =>
+            val path = Paths.get(output).toAbsolutePath()
+            if path.toFile().isFile() && !force then
+              sys.error(
+                s"Path [$path] already exists - to overwrite it, please pass `-f`/`--force` flag"
+              )
+
+            val result = vcpkgInstallImpl(deps, manager, logger)
+
+            import io.circe.parser.decode
+            import C.given
+
+            val allDeps =
+              deps.dependencies(str =>
+                decode[VcpkgManifestFile](str).fold(throw _, identity)
+              )
+
+            val flags = computeNativeFlags(
+              OutputOptions(compile = true, linking = true),
+              allDeps,
+              result.filter((k, v) => allDeps.contains(k)),
+              rename
+            ).map(_.get)
+
+            Using.resource(new FileWriter(path.toFile())): fw =>
+              fw.write(flags.mkString(System.lineSeparator()))
+
           case Action.InvokeCompiler(compiler, deps, rename, rest) =>
             val result = vcpkgInstallImpl(deps, manager, logger)
             import io.circe.parser.decode

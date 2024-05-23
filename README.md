@@ -12,10 +12,13 @@
       - [SBT](#sbt)
       - [Mill](#mill)
     - [CLI](#cli)
+      - [`--rename` argument](#rename-argument)
+      - [`pass` command](#pass-command)
       - [`bootstrap`](#bootstrap)
-      - [`install`](#install)
-      - [`clang` and `clang++`](#clang-and-clang)
-      - [`scala-cli`](#scala-cli)
+      - [`install` command](#install-command)
+      - [`clang` and `clang++` commands](#clang-and-clang-commands)
+      - [`setup-clangd`](#setup-clangd)
+      - [`scala-cli` command](#scala-cli-command)
     - [Docker base image](#docker-base-image)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
@@ -77,7 +80,7 @@ There are several modules of interest:
    You can quickly test it by running:
 
    ```
-    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.18 -- install libpq -l -q -c
+    $ cs launch com.indoorvivants.vcpkg:sn-vcpkg_3:0.0.20 -- install libpq -l -q -c
     -I<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../include
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib
     -L<...>/sbt-vcpkg/vcpkg-install/arm64-osx/lib/pkgconfig/../../lib/pkgconfig/../../lib
@@ -103,7 +106,7 @@ There are several modules of interest:
 For SBT, add this to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.18")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg" % "0.0.20")
 ```
 
 And in your build.sbt:
@@ -141,7 +144,7 @@ Tasks and settings (find them all by doing `help vcpkg*` in SBT shell):
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.18`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg:0.0.20`
 ```
 
 And use the `VcpkgModule` mixin:
@@ -152,7 +155,7 @@ import com.indoorvivants.vcpkg._
 
 import mill._, mill.scalalib._
 object example extends ScalaModule with VcpkgModule {
-  def scalaVersion = "3.3.1"
+  def scalaVersion = "3.3.3"
   def vcpkgDependencies = T(VcpkgDependencies("cmark", "cjson"))
 }
 ```
@@ -168,7 +171,7 @@ The Mill tasks are the same as in the SBT plugin
 In `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.18")
+addSbtPlugin("com.indoorvivants.vcpkg" % "sbt-vcpkg-native" % "0.0.20")
 ```
 
 In `build.sbt`:
@@ -198,7 +201,7 @@ For real world usage, see [Examples](#examples).
 Add dependency to your `build.sc`:
 
 ```scala
-import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.18`
+import $ivy.`com.indoorvivants.vcpkg::mill-vcpkg-native:0.0.20`
 ```
 
 And use the `VcpkgNativeModule` mixin:
@@ -403,6 +406,25 @@ sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 ```
 
 All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+#### `setup-clangd`
+
+[Clangd](https://clangd.llvm.org/) is an LSP server for C/C++.
+
+One of the [simplest way to configure it](https://clang.llvm.org/docs/JSONCompilationDatabase.html#alternatives) is to create a `compile_flags.txt` file in the root folder 
+of where your C/C++ files are located.
+
+For dependencies you're installing with sn-vcpkg, you can create `compile_flags.txt` by running 
+
+```
+sn-vcpkg setup-clangd <dependencies>
+```
+
+E.g. if you want to configure your C files to work with Cairo and Sqlite3:
+
+```
+sn-vcpkg setup-clangd cairo sqlite3
+```
 
 #### `scala-cli` command
 
