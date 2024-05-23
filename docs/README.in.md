@@ -12,10 +12,13 @@
       - [SBT](#sbt)
       - [Mill](#mill)
     - [CLI](#cli)
+      - [`--rename` argument](#rename-argument)
+      - [`pass` command](#pass-command)
       - [`bootstrap`](#bootstrap)
-      - [`install`](#install)
-      - [`clang` and `clang++`](#clang-and-clang)
-      - [`scala-cli`](#scala-cli)
+      - [`install` command](#install-command)
+      - [`clang` and `clang++` commands](#clang-and-clang-commands)
+      - [`setup-clangd`](#setup-clangd)
+      - [`scala-cli` command](#scala-cli-command)
     - [Docker base image](#docker-base-image)
     - [Core](#core)
       - [VcpkgRootInit](#vcpkgrootinit)
@@ -360,6 +363,25 @@ sn-vcpkg clang --manifest vcpkg.json -- test-sqlite.c
 ```
 
 All the arguments after `--` will be passed to clang/clang++ without modification (_before_ the flags calculated for dependencies)
+
+#### `setup-clangd`
+
+[Clangd](https://clangd.llvm.org/) is an LSP server for C/C++.
+
+One of the [simplest way to configure it](https://clang.llvm.org/docs/JSONCompilationDatabase.html#alternatives) is to create a `compile_flags.txt` file in the root folder 
+of where your C/C++ files are located.
+
+For dependencies you're installing with sn-vcpkg, you can create `compile_flags.txt` by running 
+
+```
+sn-vcpkg setup-clangd <dependencies>
+```
+
+E.g. if you want to configure your C files to work with Cairo and Sqlite3:
+
+```
+sn-vcpkg setup-clangd cairo sqlite3
+```
 
 #### `scala-cli` command
 
