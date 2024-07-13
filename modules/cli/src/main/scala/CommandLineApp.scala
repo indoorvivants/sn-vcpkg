@@ -11,6 +11,9 @@ import java.io.File
 import java.nio.file.Paths
 import scala.util.Using
 import java.io.FileWriter
+import java.nio.file.Files
+import cats.syntax.writer
+import util.chaining.*
 
 enum Compiler:
   case Clang, ClangPP
@@ -515,26 +518,65 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
             scalaCliArgs.addOne(scalaCliBin)
             scalaCliArgs.addAll(rest)
 
-            computeNativeFlags(
+            val flags = computeNativeFlags(
               OutputOptions(compile = true, linking = true),
               allDeps,
               result.filter((k, v) => allDeps.contains(k)),
               rename
-            ).foreach {
-              case NativeFlag.Compilation(value) =>
-                scalaCliArgs.addOne("--native-compile")
-                scalaCliArgs.addOne(value)
+            )
 
-              case NativeFlag.Linking(value) =>
-                scalaCliArgs.addOne("--native-linking")
-                scalaCliArgs.addOne(value)
-            }
+            val (linkingFlags, compileFlags) =
+              val (l, c) = flags.partition:
+                case NativeFlag.Compilation(value) => false
+                case NativeFlag.Linking(value)     => true
+
+              (l.map(_.get), c.map(_.get))
+
+            val linkFlagsFile = Files
+              .createTempFile("linking", ".txt")
+              .toFile()
+              .tap(_.deleteOnExit())
+
+            val linkFlagsFileWriter =
+              new FileWriter(
+                linkFlagsFile
+              )
+
+            val compileFlagsFile = Files
+              .createTempFile("compile", ".txt")
+              .toFile()
+              .tap(_.deleteOnExit())
+
+            val compileFlagsFileWriter =
+              new FileWriter(
+                compileFlagsFile
+              )
+
+            Using(linkFlagsFileWriter): linkFlagsFileWriter =>
+              linkingFlags.foreach(f => linkFlagsFileWriter.write(f + "\n"))
+
+            Using(compileFlagsFileWriter): compileFlagsWriter =>
+              compileFlags.foreach(f => compileFlagsWriter.write(f + "\n"))
+
+            scalaCliArgs.addAll(
+              Seq(
+                "--native-linking",
+                s"@${linkFlagsFile.toPath().toAbsolutePath().toString}"
+              )
+            )
+            scalaCliArgs.addAll(
+              Seq(
+                "--native-compile",
+                s"@${compileFlagsFile.toPath().toAbsolutePath().toString}"
+              )
+            )
 
             scribe.debug(
               s"Invoking Scala CLI with arguments: [${scalaCliArgs.result().mkString(" ")}]"
             )
 
-            val exitCode = scala.sys.process.Process(scalaCliArgs.result()).!
+            val exitCode =
+              scala.sys.process.Process(scalaCliArgs.result()).!
 
             sys.exit(exitCode)
 
