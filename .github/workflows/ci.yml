@@ -18,7 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12, macos-14]
+        # os: [ubuntu-20.04, macos-12, macos-14]
+        os: [macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -28,6 +29,8 @@ jobs:
           distribution: 'temurin' 
           java-version: 17
           cache: sbt
+
+      - uses: sbt/setup-sbt@v1
       
       - name: Tests
         run: sbt test pluginTests checkDocs publishLocal versionDump
@@ -51,7 +54,7 @@ jobs:
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm@17 sbt
+          brew install llvm@17 
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
