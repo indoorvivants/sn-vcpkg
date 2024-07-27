@@ -51,7 +51,7 @@ jobs:
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm@17
+          brew install llvm@17 sbt
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
