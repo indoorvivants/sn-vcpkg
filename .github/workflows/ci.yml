@@ -31,6 +31,12 @@ jobs:
           cache: sbt
 
       - uses: sbt/setup-sbt@v1
+
+      - name: Install LLVM
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          set -e
+          brew install llvm@17 
       
       - name: Tests
         run: sbt test pluginTests checkDocs publishLocal versionDump
@@ -50,11 +56,10 @@ jobs:
 
       - name: Run example
         env:
-          LLVM_BIN: /usr/local/opt/llvm@14/bin  
+          LLVM_BIN: /usr/local/opt/llvm@17/bin  
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm@17 
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
