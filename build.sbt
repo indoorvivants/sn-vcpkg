@@ -29,7 +29,7 @@ val V = new {
 
   val dirs = "26"
 
-  val detective = "0.0.2"
+  val detective = "0.1.0"
 
   val eclipseGit = "6.10.0.202406032230-r"
 
