@@ -21,21 +21,21 @@ organization := "com.indoorvivants.vcpkg"
 sonatypeProfileName := "com.indoorvivants"
 
 val V = new {
-  val scala213 = "2.13.12"
+  val scala213 = "2.13.15"
 
-  val scala212 = "2.12.18"
+  val scala212 = "2.12.20"
 
   val scala3 = "3.3.3"
 
   val dirs = "26"
 
-  val detective = "0.0.2"
+  val detective = "0.1.0"
 
-  val eclipseGit = "6.4.0.202211300538-r"
+  val eclipseGit = "6.10.0.202406032230-r"
 
   val mill = "0.10.15"
 
-  val utest = "0.8.2"
+  val utest = "0.8.4"
 
   val weaver = "0.8.4"
 
@@ -43,11 +43,11 @@ val V = new {
 
   val decline = "2.4.1"
 
-  val scribe = "3.12.2"
+  val scribe = "3.15.2"
 
   val scalaNative = "0.4.17"
 
-  val circe = "0.14.6"
+  val circe = "0.14.10"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
 }
