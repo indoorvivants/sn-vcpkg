@@ -18,7 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        # os: [ubuntu-20.04, macos-12, macos-14]
+        os: [macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -28,6 +29,16 @@ jobs:
           distribution: 'temurin' 
           java-version: 17
           cache: sbt
+
+      - uses: sbt/setup-sbt@v1
+
+      - name: Install LLVM
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          set -e
+          brew install llvm@17 
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
       
       - name: Tests
         run: sbt test pluginTests checkDocs publishLocal versionDump
@@ -47,11 +58,10 @@ jobs:
 
       - name: Run example
         env:
-          LLVM_BIN: /usr/local/opt/llvm@14/bin  
+          LLVM_BIN: /usr/local/opt/llvm@17/bin  
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm@14
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
