@@ -35,7 +35,7 @@ val V = new {
 
   val mill = "0.10.15"
 
-  val utest = "0.8.4"
+  val utest = "0.8.5"
 
   val weaver = "0.8.4"
 
