@@ -33,7 +33,7 @@ val V = new {
 
   val eclipseGit = "6.10.0.202406032230-r"
 
-  val mill = "0.10.15"
+  val mill = "0.12.8"
 
   val utest = "0.8.4"
 
