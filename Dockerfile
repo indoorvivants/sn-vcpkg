@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-focal
+FROM eclipse-temurin:21-jammy
 
 RUN apt update && apt install -y curl && \
     curl -Lo /usr/local/bin/sbt https://raw.githubusercontent.com/sbt/sbt/1.10.x/sbt && \
