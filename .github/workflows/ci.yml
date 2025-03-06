@@ -18,12 +18,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        os: [ubuntu-22.04, macos-13]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin' 
           java-version: 17
@@ -47,11 +47,11 @@ jobs:
 
       - name: Run example
         env:
-          LLVM_BIN: /usr/local/opt/llvm@14/bin  
+          LLVM_BIN: /usr/local/opt/llvm@17/bin  
         if: startsWith(matrix.os, 'macos-')
         run: |
           set -e
-          brew install llvm@14
+          brew install llvm@17
           cd example 
           SBT_VCPKG_VERSION=$(cat ../version) sbt example/run
 
@@ -98,9 +98,9 @@ jobs:
       - name: Install pkg-config on Windows
         run: choco install pkgconfiglite
       
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin' 
           java-version: 17
