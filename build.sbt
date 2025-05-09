@@ -219,7 +219,7 @@ lazy val `mill-vcpkg-native-plugin` = projectMatrix
   .dependsOn(core, `mill-vcpkg-plugin` % "test->test;compile->compile")
   .settings(publishing)
   .settings(
-    name := "mill-vcpkg",
+    name := "mill-vcpkg-native",
     libraryDependencies += "com.lihaoyi" %% "mill-scalanativelib" % V.mill,
     libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
     testFrameworks += new TestFramework("utest.runner.Framework"),
