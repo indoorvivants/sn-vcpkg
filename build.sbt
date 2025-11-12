@@ -37,7 +37,7 @@ val V = new {
 
   val utest = "0.8.4"
 
-  val weaver = "0.8.4"
+  val weaver = "0.11.0"
 
   val b2s = "0.3.17"
 
@@ -136,7 +136,7 @@ lazy val core = projectMatrix
       "dev.dirs" % "directories" % V.dirs,
       "com.indoorvivants.detective" %% "platform" % V.detective,
       "org.eclipse.jgit" % "org.eclipse.jgit" % V.eclipseGit,
-      "com.disneystreaming" %% "weaver-cats" % V.weaver % Test
+      "org.typelevel" %% "weaver-cats" % V.weaver % Test
     ),
     testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     scalacOptions ++= {
