@@ -17,3 +17,6 @@ project/target
 .project
 .settings
 bin
+
+modules/mill-vcpkg-plugin/out
+modules/mill-vcpkg-native-plugin/out

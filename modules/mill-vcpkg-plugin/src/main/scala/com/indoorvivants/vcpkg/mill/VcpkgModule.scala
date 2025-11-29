@@ -1,26 +1,23 @@
 package com.indoorvivants.vcpkg.millplugin
 
 import com.indoorvivants.vcpkg.PkgConfig
-import com.indoorvivants.detective.Platform.OS._
+import com.indoorvivants.detective.Platform.OS.*
 import com.indoorvivants.vcpkg
+import com.indoorvivants.vcpkg.ExternalLogger
+import com.indoorvivants.vcpkg.VcpkgConfigurator
 import com.indoorvivants.vcpkg.VcpkgBootstrap
 import com.indoorvivants.vcpkg.VcpkgPluginImpl
-import mill._
-import mill.define.Discover
-import mill.define.ExternalModule
-import mill.define.Worker
+import mill.*
+import mill.api.Discover
+import mill.api.ExternalModule
+import mill.api.Logger
 
 import java.nio.file.Files
 import java.util.Arrays
 import java.util.stream.Collectors
 import scala.sys.process
-import com.indoorvivants.vcpkg.ExternalLogger
-import com.indoorvivants.vcpkg.VcpkgConfigurator
-import mill.api.Logger
-import mill.define.Task
-import mill.define.Target
 
-trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
+trait VcpkgModule extends mill.api.Module with VcpkgPluginImpl {
 
   /** List of vcpkg dependencies
     */
@@ -28,18 +25,18 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 
   /** Whether to bootstrap vcpkg automatically
     */
-  def vcpkgRootInit: Task[vcpkg.VcpkgRootInit] = T.task { defaultRootInit }
+  def vcpkgRootInit: Task[vcpkg.VcpkgRootInit] = Task.Anon { defaultRootInit }
 
-  def vcpkgAllowBootstrap: T[Boolean] = T {
+  def vcpkgAllowBootstrap: T[Boolean] = Task {
     vcpkgRootInit()
-      .locate(millLogger(T.log))
+      .locate(millLogger(Task.log))
       .map(_.allowBootstrap)
       .getOrElse(false)
   }
 
-  def vcpkgRoot: T[os.Path] = T {
+  def vcpkgRoot: T[os.Path] = Task {
     val ioFile = vcpkgRootInit()
-      .locate(millLogger(T.log))
+      .locate(millLogger(Task.log))
       .map(_.file)
       .fold(
         msg =>
@@ -55,35 +52,35 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     os.Path(defaultInstallDir)
   }
 
-  def vcpkgConfigurator: Worker[VcpkgConfigurator] = T.worker {
+  def vcpkgConfigurator: Worker[VcpkgConfigurator] = Task.Worker {
     new VcpkgConfigurator(
       vcpkgManager().config,
       vcpkgInstall(),
-      millLogger(T.log)
+      millLogger(Task.log)
     )
   }
 
   /** "Path to vcpkg binary"
     */
-  def vcpkgBinary: T[os.Path] = T {
+  def vcpkgBinary: T[os.Path] = Task {
     val ioFile = vcpkgBinaryImpl(
       root = vcpkg.VcpkgRoot(vcpkgRoot().toIO, vcpkgAllowBootstrap()),
-      logger = millLogger(T.log)
+      logger = millLogger(Task.log)
     )
     os.Path(ioFile)
   }
 
-  def vcpkgManager: Worker[vcpkg.Vcpkg] = T.worker {
+  def vcpkgManager: Worker[vcpkg.Vcpkg] = Task.Worker {
     VcpkgBootstrap.manager(
       vcpkgBinary().toIO,
       vcpkgInstallDir().toIO,
-      millLogger(T.log)
+      millLogger(Task.log)
     )
   }
 
-  def vcpkgInstall: T[Map[vcpkg.Dependency, vcpkg.FilesInfo]] = T {
+  def vcpkgInstall: T[Map[vcpkg.Dependency, vcpkg.FilesInfo]] = Task {
     val manager = vcpkgManager()
-    val logger = millLogger(T.log)
+    val logger = millLogger(Task.log)
 
     vcpkgInstallImpl(
       vcpkgDependencies(),
@@ -92,9 +89,9 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
     )
   }
 
-  def vcpkgRun(args: String*): Target[Unit] = T {
+  def vcpkgRun(args: String*): Command[Unit] = Task.Command {
     val manager = vcpkgManager()
-    val logger = millLogger(T.log)
+    val logger = millLogger(Task.log)
 
     vcpkgPassImpl(
       args,
@@ -115,5 +112,5 @@ trait VcpkgModule extends mill.define.Module with VcpkgPluginImpl {
 }
 
 object VcpkgModule extends ExternalModule with VcpkgPluginImpl {
-  def millDiscover: Discover[this.type] = mill.define.Discover[this.type]
+  lazy val millDiscover = Discover[this.type]
 }
