@@ -8,8 +8,6 @@ import com.indoorvivants.vcpkg.{
   VcpkgManifestFile,
   VcpkgManifestDependency
 }
-import mill.define.Task
-import mill.define.Target
 
 private[native] object manifestReader {
   implicit val rw: upickle.default.Reader[VcpkgManifestDependency] =
@@ -26,44 +24,44 @@ trait VcpkgNativeModule
     with VcpkgModule
     with VcpkgPluginNativeImpl {
 
-  def vcpkgNativeLinking: T[Seq[String]] = T {
+  def vcpkgNativeLinking: T[Seq[String]] = Task {
     linkingFlags(
       configurator = vcpkgConfigurator(),
       deps =
         vcpkgDependencies().dependencies(manifestReader.apply).map(_.short),
-      logger = millLogger(T.log),
+      logger = millLogger(Task.log),
       conf = vcpkgNativeConfig()
     )
   }
 
-  def vcpkgNativeCompilation: T[Seq[String]] = T {
+  def vcpkgNativeCompilation: T[Seq[String]] = Task {
     compilationFlags(
       configurator = vcpkgConfigurator(),
       deps =
         vcpkgDependencies().dependencies(manifestReader.apply).map(_.short),
-      logger = millLogger(T.log),
+      logger = millLogger(Task.log),
       conf = vcpkgNativeConfig()
     )
   }
 
-  def vcpkgNativeConfig: Task[VcpkgNativeConfig] = T.task {
+  def vcpkgNativeConfig: Task[VcpkgNativeConfig] = Task.Anon {
     VcpkgNativeConfig()
   }
 
-  override def nativeCompileOptions: Target[Array[String]] = T {
+  override def nativeCompileOptions: T[Seq[String]] = Task {
     updateCompilationFlags(
       vcpkgNativeConfig(),
-      super.nativeCompileOptions().toSeq,
+      super.nativeCompileOptions(),
       vcpkgNativeCompilation()
-    ).toArray
+    )
   }
 
-  override def nativeLinkingOptions: Target[Array[String]] = T {
+  override def nativeLinkingOptions: T[Seq[String]] = Task {
     updateLinkingFlags(
       vcpkgNativeConfig(),
-      super.nativeLinkingOptions().toSeq,
+      super.nativeLinkingOptions(),
       vcpkgNativeLinking()
-    ).toArray
+    )
 
   }
 }

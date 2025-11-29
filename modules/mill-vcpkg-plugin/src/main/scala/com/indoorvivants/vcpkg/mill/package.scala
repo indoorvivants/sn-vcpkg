@@ -21,7 +21,7 @@ private[vcpkg] trait VcpkgCodecs {
           case Names(deps)        => Left(deps.map(_.short))
         },
         _ match {
-          case Left(value)  => VcpkgDependencies(value: _*)
+          case Left(value)  => VcpkgDependencies(value *)
           case Right(value) => VcpkgDependencies(value.path.toIO)
         }
       )

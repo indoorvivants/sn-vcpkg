@@ -25,7 +25,9 @@ val V = new {
 
   val scala212 = "2.12.20"
 
-  val scala3 = "3.3.3"
+  val scala3 = "3.3.6"
+
+  val scala37 = "3.7.4"
 
   val dirs = "26"
 
@@ -33,7 +35,7 @@ val V = new {
 
   val eclipseGit = "7.2.0.202503040940-r"
 
-  val mill = "0.10.15"
+  val mill = "1.0.6"
 
   val utest = "0.8.4"
 
@@ -62,8 +64,8 @@ lazy val root = project
   .aggregate(core.projectRefs *)
   .aggregate(`sbt-vcpkg-plugin`.projectRefs *)
   .aggregate(`sbt-vcpkg-native-plugin`.projectRefs *)
-  .aggregate(`mill-vcpkg-plugin`.projectRefs *)
-  .aggregate(`mill-vcpkg-native-plugin`.projectRefs *)
+  .aggregate(`mill-vcpkg-plugin`)
+  .aggregate(`mill-vcpkg-native-plugin`)
   .aggregate(cli.projectRefs *)
   .settings(
     publish / skip := true
@@ -197,37 +199,49 @@ lazy val `sbt-vcpkg-native-plugin` = projectMatrix
     scriptedBufferLog := false
   )
 
-lazy val `mill-vcpkg-plugin` = projectMatrix
-  .jvmPlatform(scalaVersions = Seq(V.scala213))
-  .in(file("modules/mill-vcpkg-plugin"))
-  .dependsOn(core)
-  .settings(publishing)
-  .settings(
-    name := "mill-vcpkg",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalalib" % V.mill,
-    libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    Test / fork := true,
-    Test / envVars += (
-      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-plugin" / "src" / "test").toString
-    )
-  )
+def millDep(dep: String) =
+  ("com.lihaoyi" %% dep % V.mill)
+    .exclude("org.scala-lang.modules", "scala-collection-compat_2.13")
+    .exclude("org.scala-lang.modules", "scala-xml_2.13")
 
-lazy val `mill-vcpkg-native-plugin` = projectMatrix
-  .jvmPlatform(scalaVersions = Seq(V.scala213))
-  .in(file("modules/mill-vcpkg-native-plugin"))
-  .dependsOn(core, `mill-vcpkg-plugin` % "test->test;compile->compile")
-  .settings(publishing)
-  .settings(
-    name := "mill-vcpkg-native",
-    libraryDependencies += "com.lihaoyi" %% "mill-scalanativelib" % V.mill,
-    libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    Test / fork := true,
-    Test / envVars += (
-      "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-native-plugin" / "src" / "test").toString
+lazy val `mill-vcpkg-plugin` =
+  project
+    .in(file("modules/mill-vcpkg-plugin"))
+    .settings(scalaVersion := V.scala37)
+    .dependsOn(core.jvm(V.scala3))
+    .settings(publishing)
+    .settings(
+      name := "mill-vcpkg",
+      libraryDependencies += millDep("mill-libs-scalalib"),
+      libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
+      libraryDependencies += millDep("mill-testkit") % Test,
+      testFrameworks += new TestFramework("utest.runner.Framework"),
+      Test / fork := true,
+      Test / envVars += (
+        "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-plugin" / "src" / "test").toString
+      )
     )
-  )
+
+lazy val `mill-vcpkg-native-plugin` =
+  project
+    .in(file("modules/mill-vcpkg-native-plugin"))
+    .settings(scalaVersion := V.scala37)
+    .dependsOn(
+      core.jvm(V.scala3),
+      `mill-vcpkg-plugin` % "test->test;compile->compile"
+    )
+    .settings(publishing)
+    .settings(
+      name := "mill-vcpkg-native",
+      libraryDependencies += millDep("mill-libs-scalanativelib"),
+      libraryDependencies += millDep("mill-testkit"),
+      libraryDependencies += "com.lihaoyi" %% "utest" % V.utest % Test,
+      testFrameworks += new TestFramework("utest.runner.Framework"),
+      Test / fork := true,
+      Test / envVars += (
+        "MILL_VCPKG_ROOT" -> ((ThisBuild / baseDirectory).value / "modules" / "mill-vcpkg-native-plugin" / "src" / "test").toString
+      )
+    )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
