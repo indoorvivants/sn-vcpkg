@@ -72,20 +72,24 @@ object VcpkgPlugin
     vcpkgDependencies := VcpkgDependencies(),
     vcpkgRootInit := Def.uncached(defaultRootInit),
     vcpkgInstallDir := Def.uncached(defaultInstallDir),
-    vcpkgAllowBootstrap := Def.uncached(vcpkgRootInit.value
-      .locate(sbtLogger(sLog.value))
-      .map(_.allowBootstrap)
-      .fold(_ => false, identity)),
-    vcpkgRoot := Def.uncached(vcpkgRootInit.value
-      .locate(sbtLogger(sLog.value))
-      .map(_.file)
-      .fold(
-        msg =>
-          throw new MessageOnlyException(
-            s"Failed to identify a root for Vcpkg: `$msg`"
-          ),
-        identity
-      )),
+    vcpkgAllowBootstrap := Def.uncached(
+      vcpkgRootInit.value
+        .locate(sbtLogger(sLog.value))
+        .map(_.allowBootstrap)
+        .fold(_ => false, identity)
+    ),
+    vcpkgRoot := Def.uncached(
+      vcpkgRootInit.value
+        .locate(sbtLogger(sLog.value))
+        .map(_.file)
+        .fold(
+          msg =>
+            throw new MessageOnlyException(
+              s"Failed to identify a root for Vcpkg: `$msg`"
+            ),
+          identity
+        )
+    ),
     vcpkgManager := Def.uncached({
       VcpkgBootstrap.manager(
         vcpkgBinary.value,
