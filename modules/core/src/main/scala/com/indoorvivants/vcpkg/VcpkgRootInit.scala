@@ -60,8 +60,12 @@ object VcpkgRootInit {
   }
 
   object FromEnv {
-    def apply(name: String = "VCPKG_ROOT", allowBootstrap: Boolean = true) =
-      new FromEnv(name, allowBootstrap, env = sys.env)
+    def apply(
+        name: String = "VCPKG_ROOT",
+        allowBootstrap: Boolean = true,
+        env: Map[String, String] = sys.env
+    ) =
+      new FromEnv(name, allowBootstrap, env)
   }
 
   case class Manual(file: File, allowBootstrap: Boolean = true)
@@ -105,44 +109,5 @@ object VcpkgRootInit {
         )
       )
   }
-
-}
-
-trait CacheDirDetector {
-  def cacheDir: File
-}
-
-object CacheDirDetector {
-  def apply() = new CacheDirDetectorImpl()
-}
-
-private[vcpkg] class CacheDirDetectorImpl(
-    env: Map[String, String] = sys.env,
-    props: Map[String, String] = sys.props.toMap,
-    os: Platform.OS = Platform.os
-) extends CacheDirDetector {
-
-  def cacheDir: File = {
-    def absoluteFile(path: String): File = new File(path).getAbsoluteFile()
-    def windowsCacheDirectory: File = {
-      val base =
-        env
-          .get("LOCALAPPDATA")
-          .map(absoluteFile)
-          .getOrElse(
-            absoluteFile(props("user.home")) / "AppData" / "Local"
-          )
-
-      base / "sbt-vcpkg" / "cache"
-    }
-
-    if (dirs.cacheDir.startsWith("null") && Platform.os == Platform.OS.Windows)
-      windowsCacheDirectory
-    else
-      new File(dirs.cacheDir)
-  }
-
-  private def dirs: ProjectDirectories =
-    dev.dirs.ProjectDirectories.fromPath("sbt-vcpkg")
 
 }

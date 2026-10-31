@@ -363,12 +363,17 @@ object VcpkgCLI extends VcpkgPluginImpl, VcpkgPluginNativeImpl:
     val arguments = args.takeWhile(_ != "--")
     val rest      = args.drop(arguments.length + 1)
     opts.parse(arguments) match
-      case Left(help) =>
-        val (modified, code) =
-          if help.errors.nonEmpty then help.copy(body = Nil) -> -1
-          else help                                          -> 0
-        System.err.println(modified)
-        if code != 0 then sys.exit(code)
+      case Left(value) =>
+        System.err.println(
+          value.render(
+            // We manually implement auto colors until Decline 2.6.1 is released:
+            // https://github.com/bkirwi/decline/pull/645
+            HelpFormat.Colors.withColors(
+              sys.env.get("NO_COLOR").map(_ => false).getOrElse(true)
+            )
+          )
+        )
+        if value.errors.nonEmpty then sys.exit(-1) else sys.exit(0)
       case Right((suspended, config)) =>
         val action = suspended.apply(rest)
         import config.*

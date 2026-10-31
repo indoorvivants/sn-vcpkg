@@ -13,8 +13,12 @@ import java.util.Arrays
 import java.util.stream.Collectors
 import scala.sys.process
 import sjsonnew.JsonFormat
+import sbtcompat.PluginCompat._
 
-object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
+object VcpkgPlugin
+    extends AutoPlugin
+    with vcpkg.VcpkgPluginImpl
+    with JsonFormats {
 
   object autoImport {
     type VcpkgDependencies = vcpkg.VcpkgDependencies
@@ -23,29 +27,38 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
     val vcpkgDependencies =
       settingKey[VcpkgDependencies]("List of vcpkg dependencies")
 
+    @transient
     val vcpkgInstall = taskKey[Map[vcpkg.Dependency, vcpkg.FilesInfo]](
       "Invoke Vcpkg and attempt to install packages"
     )
 
+    @transient
     val vcpkgRootInit = taskKey[vcpkg.VcpkgRootInit](
       "Specification of the location where vcpkg will be bootstrapped and where the packages will be installed"
     )
+    @transient
     val vcpkgRoot = taskKey[File]("Root of vcpkg installation")
+    @transient
     val vcpkgAllowBootstrap =
       taskKey[Boolean]("Allow bootstrapping root location")
 
+    @transient
     val vcpkgInstallDir = taskKey[File]("Where to put installed packages")
 
+    @transient
     val vcpkgBinary = taskKey[File]("Path to vcpkg binary")
 
+    @transient
     val vcpkgManager = taskKey[Vcpkg](
       "Value of `Vcpkg` type - a thin wrapper around the `vcpkg` CLI, already bootstrapped"
     )
 
+    @transient
     val vcpkgConfigurator = taskKey[vcpkg.VcpkgConfigurator](
       "`VcpkgConfigurator` instance, which provides access to PkgConfig (a thin wrapper over pre-configured pkg-config) and some methods to approximate compilation/linking arguments for installed packages"
     )
 
+    @transient
     val vcpkgRun = inputKey[Unit](
       "Run the bootstrapped vcpkg CLI with a given list of arguments"
     )
@@ -53,58 +66,50 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
 
   import autoImport._
 
-  import sbt.util.CacheImplicits._
-
-  implicit val depFmt: JsonFormat[vcpkg.Dependency] =
-    caseClass2(vcpkg.Dependency.apply, vcpkg.Dependency.unapply)(
-      "name",
-      "features"
-    )
-
-  implicit val fiFmt: JsonFormat[vcpkg.FilesInfo] =
-    caseClass2(vcpkg.FilesInfo.apply, vcpkg.FilesInfo.unapply)(
-      "includeDir",
-      "libDir"
-    )
+  import sbt.util.CacheImplicits.{*, given}
 
   override lazy val projectSettings = Seq(
     vcpkgDependencies := VcpkgDependencies(),
-    vcpkgRootInit := defaultRootInit,
-    vcpkgInstallDir := defaultInstallDir,
-    vcpkgAllowBootstrap := vcpkgRootInit.value
-      .locate(sbtLogger(sLog.value))
-      .map(_.allowBootstrap)
-      .fold(_ => false, identity),
-    vcpkgRoot := vcpkgRootInit.value
-      .locate(sbtLogger(sLog.value))
-      .map(_.file)
-      .fold(
-        msg =>
-          throw new MessageOnlyException(
-            s"Failed to identify a root for Vcpkg: `$msg`"
-          ),
-        identity
-      ),
-    vcpkgManager := {
+    vcpkgRootInit := Def.uncached(defaultRootInit),
+    vcpkgInstallDir := Def.uncached(defaultInstallDir),
+    vcpkgAllowBootstrap := Def.uncached(
+      vcpkgRootInit.value
+        .locate(sbtLogger(sLog.value))
+        .map(_.allowBootstrap)
+        .fold(_ => false, identity)
+    ),
+    vcpkgRoot := Def.uncached(
+      vcpkgRootInit.value
+        .locate(sbtLogger(sLog.value))
+        .map(_.file)
+        .fold(
+          msg =>
+            throw new MessageOnlyException(
+              s"Failed to identify a root for Vcpkg: `$msg`"
+            ),
+          identity
+        )
+    ),
+    vcpkgManager := Def.uncached({
       VcpkgBootstrap.manager(
         vcpkgBinary.value,
         vcpkgInstallDir.value,
         logger = sbtLogger(sLog.value)
       )
-    },
-    vcpkgConfigurator := {
+    }),
+    vcpkgConfigurator := Def.uncached({
       new vcpkg.VcpkgConfigurator(
         vcpkgManager.value.config,
         vcpkgInstall.value,
         logger = sbtLogger(sLog.value)
       )
-    },
-    vcpkgBinary := {
+    }),
+    vcpkgBinary := Def.uncached({
       vcpkgBinaryImpl(
         root = vcpkg.VcpkgRoot(vcpkgRoot.value, vcpkgAllowBootstrap.value),
         logger = sbtLogger(sLog.value)
       )
-    },
+    }),
     vcpkgRun := {
       import complete.DefaultParsers._
       val args: Seq[String] = spaceDelimited("<arg>").parsed
@@ -114,7 +119,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
       vcpkgPassImpl(args, manager, logger).foreach(println)
 
     },
-    vcpkgInstall := {
+    vcpkgInstall := Def.uncached({
       val manager = vcpkgManager.value
       val logger = sbtLogger(sLog.value)
       val cacheFactory = streams.value.cacheStoreFactory
@@ -160,7 +165,7 @@ object VcpkgPlugin extends AutoPlugin with vcpkg.VcpkgPluginImpl {
         case Names(deps) => cachedInstall(deps.toList).toMap
       }
 
-    }
+    })
   )
 
   override lazy val buildSettings = Seq()
