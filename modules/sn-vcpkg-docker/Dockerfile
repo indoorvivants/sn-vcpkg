@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y openjdk-17-jdk \
 RUN curl -fL "https://github.com/coursier/launchers/raw/master/cs-$(uname -m)-pc-linux.gz" | gzip -d > /usr/bin/cs && \
     chmod +x /usr/bin/cs
 # Sbt
-RUN curl -Lo /usr/bin/sbt https://raw.githubusercontent.com/sbt/sbt/1.9.x/sbt && chmod +x /usr/bin/sbt
+RUN curl -Lo /usr/bin/sbt https://raw.githubusercontent.com/sbt/sbt/1.13.x/sbt && chmod +x /usr/bin/sbt
 
 WORKDIR /workdir/source
 COPY . .
