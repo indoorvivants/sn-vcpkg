@@ -25,7 +25,7 @@ val V = new {
 
   val scala212 = "2.12.20"
 
-  val scala3 = "3.3.3"
+  val scala3 = "3.3.8"
 
   val dirs = "26"
 
@@ -41,15 +41,20 @@ val V = new {
 
   val b2s = "0.3.17"
 
-  val decline = "2.4.1"
+  val decline = "2.6.2"
 
-  val scribe = "3.15.2"
+  val scribe = "3.19.0"
 
-  val scalaNative = "0.4.17"
+  val scalaNative = "0.5.12"
 
   val circe = "0.14.13"
 
   val supportedScalaVersions = List(scala213, scala212, scala3)
+
+  val sbt1ScalaVersion = scala212
+  val sbt2ScalaVersion = "3.8.3"
+  val sbt1 = "1.12.12"
+  val sbt2 = "2.0.0"
 }
 
 lazy val publishing = Seq(
@@ -161,8 +166,7 @@ lazy val cli = projectMatrix
   )
 
 lazy val `sbt-vcpkg-plugin` = projectMatrix
-  .jvmPlatform(scalaVersions = Seq(V.scala212))
-  .defaultAxes(VirtualAxis.jvm, VirtualAxis.scalaABIVersion(V.scala212))
+  .jvmPlatform(scalaVersions = Seq(V.sbt1ScalaVersion, V.sbt2ScalaVersion))
   .in(file("modules/sbt-vcpkg-plugin"))
   .dependsOn(core)
   .enablePlugins(ScriptedPlugin, SbtPlugin)
@@ -170,6 +174,20 @@ lazy val `sbt-vcpkg-plugin` = projectMatrix
   .settings(
     name := "sbt-vcpkg",
     sbtPlugin := true,
+    addSbtPlugin("com.github.sbt" % "sbt2-compat" % "0.1.0"),
+    (pluginCrossBuild / sbtVersion) := {
+      scalaBinaryVersion.value match {
+        case "2.12" => V.sbt1
+        case _      => V.sbt2
+      }
+    },
+    scalacOptions ++= {
+      scalaBinaryVersion.value match {
+        case "2.12" => "-Xsource:3" :: Nil
+        case _      => Nil
+      }
+    },
+
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",
@@ -188,6 +206,18 @@ lazy val `sbt-vcpkg-native-plugin` = projectMatrix
   .settings(
     name := """sbt-vcpkg-native""",
     sbtPlugin := true,
+    (pluginCrossBuild / sbtVersion) := {
+      scalaBinaryVersion.value match {
+        case "2.12" => V.sbt1
+        case _      => V.sbt2
+      }
+    },
+    scalacOptions ++= {
+      scalaBinaryVersion.value match {
+        case "2.12" => "-Xsource:3" :: Nil
+        case _      => Nil
+      }
+    },
     // set up 'scripted; sbt plugin for testing sbt plugins
     scriptedLaunchOpts ++= Seq(
       "-Xmx1024M",
@@ -241,5 +271,5 @@ versionDump := {
 
 addCommandAlias(
   "pluginTests",
-  "sbt-vcpkg-plugin/scripted;sbt-vcpkg-native-plugin/scripted"
+  "sbt-vcpkg-plugin2_12/scripted;sbt-vcpkg-plugin3/scripted;sbt-vcpkg-native-plugin/scripted"
 )

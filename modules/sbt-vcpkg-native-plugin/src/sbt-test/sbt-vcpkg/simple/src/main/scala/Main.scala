@@ -16,7 +16,7 @@ def cmark_render_html(root: MARKDOWN, flags: Int): CString = extern
   val json = cJSON_Parse(c"[1, true]")
   assert(fromCString(cJSON_Print(json)) == "[1, true]")
   
-  Zone { implicit z => 
+  Zone {
     val str = "Hello, _world_"
     val markdown = cmark_parse_document(toCString(str), str.length, 0)
     val html = fromCString(cmark_render_html(markdown, 0)).trim
